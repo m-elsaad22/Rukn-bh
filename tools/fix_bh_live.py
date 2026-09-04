@@ -539,7 +539,7 @@ def create_menu(created: dict[str, int]) -> None:
     ]
     for title, url in items:
         code, out = cli(
-            f"menu item add-custom 'القائمة الرئيسية' {json.dumps(title)} {json.dumps(url)}"
+            f"menu item add-custom 'القائمة الرئيسية' '{title}' '{url}'"
         )
         print("menu item", title, code, str(out.get("stdout") or out.get("stderr") or "")[:120])
     for loc in ("primary", "menu-1", "main", "header", "primary_menu"):
