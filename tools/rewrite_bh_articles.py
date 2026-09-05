@@ -835,7 +835,7 @@ def build_article(title: str, slug: str) -> tuple[str, str]:
     if voice % 2:
         feats = feats[::-1]
 
-    svc_h = pick(n + 4, [f"خدمات {kw}", f"ماذا يشمل {full}؟", f"نطاق عمل {kw} داخل {city}"])
+    svc_h = pick(n + 4, [f"خدمات {kw}", f"ما البنود داخل {full}؟", f"نطاق عمل {kw} داخل {city}"])
     svc_items = pack["services"]
     rot = n % max(len(svc_items), 1)
     svc_items = svc_items[rot:] + svc_items[:rot]
