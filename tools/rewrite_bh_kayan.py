@@ -9,6 +9,7 @@ import os
 import re
 import sys
 import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import urllib.error
 import urllib.parse
@@ -20,6 +21,7 @@ from rewrite_bh_articles import (  # noqa: E402
     CITIES,
     PACKS,
     angle_for,
+    area_tour,
     parse_title,
     pick,
     seed,
@@ -65,7 +67,19 @@ ICONS = {
     "gen": "fa-house-chimney",
 }
 
-LEN_TARGET = {"long": 2200, "mid": 1800, "std": 1400}
+LEN_TARGET = {"long": 2100, "mid": 1750, "std": 1450}
+STRING_META = (
+    "whatsapp_number",
+    "hide__card__callbutton",
+    "hide__service__callbutton",
+    "hide__floating__call",
+    "whatsapp_chat_mode",
+    "floating_whatsapp_chat_mode",
+    "last_update",
+    "rank_math_title",
+    "rank_math_description",
+    "rank_math_focus_keyword",
+)
 
 
 def auth() -> str:
@@ -161,7 +175,16 @@ def style_block() -> str:
         ".kayan-steps{display:grid;gap:10px;margin:18px 0}"
         f".kayan-step{{display:flex;gap:12px;background:#fff;border:1px solid #d7e4f2;border-radius:14px;padding:12px}}"
         f".kayan-num{{min-width:42px;height:42px;border-radius:50%;background:{PRIMARY};color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700}}"
-        "@media(max-width:640px){.kayan-article table{font-size:14px}.kayan-hero{padding:16px}}"
+        ".kayan-snippet{background:#eef6fc;border:1px solid #d7e4f2;border-right:5px solid "
+        f"{PRIMARY};padding:14px 16px;border-radius:12px;margin:18px 0;line-height:1.85}}"
+        ".kayan-article .yc-shortcode--single-features-item{min-width:0!important;flex:1 1 240px;"
+        "padding:16px!important;flex-direction:column;align-items:flex-start}"
+        ".kayan-article .yc-shortcode-features--icon{margin-inline-end:0!important;margin-bottom:8px;font-size:28px}"
+        ".kayan-article .-FaqsSimple-vsingle-Content-Row-v1{display:block!important;max-height:none!important;opacity:1!important}"
+        ".kayan-article .yc-shortcode--box{margin:22px 0}"
+        "@media(max-width:640px){.kayan-article table{font-size:14px}.kayan-hero{padding:16px}"
+        ".kayan-article .yc-shortcode--single-features-item{min-width:100%!important;margin:8px 0!important}"
+        ".kayan-article .yc-shortcode--features--items{margin:0!important;display:block}}"
         "</style>"
     )
 
@@ -182,18 +205,145 @@ def warn(body: str) -> str:
     return f'<blockquote class="kayan-warn"><i class="fas fa-exclamation-triangle"></i> <strong>تنبيه:</strong> {body}</blockquote>'
 
 
+def kayan_features(title: str, desc: str, items: list, icon: str) -> str:
+    cards = []
+    for it in items:
+        cards.append(
+            '<div class="yc-shortcode--single-features-item">'
+            f'<div class="yc-shortcode-features--icon"><i class="fas {icon}"></i></div>'
+            '<div class="yc-shortcode--step--info">'
+            f"<h3>{it['title']}</h3><p>{it['content']}</p></div></div>"
+        )
+    return (
+        f'<div class="yc-shortcode--box yc-shortcode--features"><h2 class="--short--code--title">{title}</h2>'
+        f'<p class="--short--code--content">{desc}</p>'
+        f'<div class="yc-shortcode--features--items">{"".join(cards)}</div></div>'
+    )
+
+
+def kayan_steps(title: str, desc: str, items: list) -> str:
+    rows = []
+    for i, it in enumerate(items, 1):
+        rows.append(
+            '<div class="yc-shortcode--single-worksteps-item">'
+            f'<div class="yc-shortcode-worksteps--image">{i:02d}</div>'
+            f'<div class="yc-shortcode--worksteps--info"><h3>{it["title"]}</h3><p>{it["content"]}</p></div></div>'
+        )
+    return (
+        f'<div class="yc-shortcode--box yc-shortcode--work-steps"><h2 class="--short--code--title">{title}</h2>'
+        f'<p class="--short--code--content">{desc}</p>'
+        f'<div class="yc-shortcode--steps--items">{"".join(rows)}</div></div>'
+    )
+
+
+def kayan_services(title: str, desc: str, items: list) -> str:
+    rows = []
+    for it in items:
+        rows.append(
+            '<div class="yc-shortcode--single-services-item">'
+            f'<div class="yc-shortcode--services--info"><h3>{it["title"]}</h3><p>{it["content"]}</p></div></div>'
+        )
+    return (
+        f'<div class="yc-shortcode--box yc-shortcode--post-services"><h2 class="--short--code--title">{title}</h2>'
+        f'<p class="--short--code--content">{desc}</p>'
+        f'<div class="yc-shortcode--services--items">{"".join(rows)}</div></div>'
+    )
+
+
+def kayan_prices(title: str, desc: str, items: list) -> str:
+    trs = "".join(f"<tr><td>{it['title']}</td><td>{it['value']}</td></tr>" for it in items)
+    return (
+        f'<div class="yc-shortcode--box yc-shortcode--price_list"><h2 class="--short--code--title">{title}</h2>'
+        f'<p class="--short--code--content">{desc}</p>'
+        '<div class="yc-shortcode--price_list--items"><div class="responsive-table">'
+        f'<table class="price-table"><thead><tr><th>العامل</th><th>التحديد</th></tr></thead><tbody>{trs}</tbody></table>'
+        "</div></div></div>"
+    )
+
+
+def kayan_call(title: str, desc: str) -> str:
+    return (
+        '<div class="yc-shortcode--box yc-shortcode--section--contactus"><div class="--contact--post-info">'
+        f'<h2 class="--shortcode--section--contactus--title">{title}</h2>'
+        f'<p class="--shortcode--section--contactus--content">{desc}</p></div>'
+        '<div class="--contact--post-call--buttons">'
+        f'<a target="_blank" rel="nofollow" class="--contact--button-call-link --button-call-link-whatsapp -BTN--hoverable" href="https://wa.me/{WA}">'
+        '<i class="fa-brands fa-whatsapp"></i><strong>الواتساب</strong></a></div></div>'
+    )
+
+
+def kayan_faq(faqs: list) -> str:
+    items = []
+    for i, f in enumerate(faqs):
+        active = " active" if i == 0 else ""
+        items.append(
+            f'<div class="-YC-FaqsSimple-vsingle-Item-v2{active}">'
+            f'<div class="-YC-FaqsSimple-vsingle-Title" data-toggle-faqs="{i}">'
+            f'<div class="--fq-count">{i+1:02d}</div><h2>{f["question"]}</h2>'
+            '<i class="fa-solid fa-plus"></i></div>'
+            '<div class="-FaqsSimple-vsingle-Content-Row-v1 -Toggle-Content">'
+            f'<div class="-p-FaqsSimple-vsingle-ContentValue-v1 -ToggleContentValue">{f["answer"]}</div></div></div>'
+        )
+    return (
+        '<div class="-YC-FaqsSimple-vsingle"><h2 class="--widget--sidebar--title">الأسئلة الشائعة</h2>'
+        f'<div class="-YC-FaqsSimple-vsingle-items">{"".join(items)}</div></div>'
+    )
+
+
 def hero(full: str, city: str, n: int) -> str:
     lines = [
         f"معاينة مكتوبة ثم عرض سعر — بلا تخمين من الرسالة داخل {city}.",
-        f"نبدأ من المصدر لا من العرض السريع، ثم نحدد عدة {full.split(' في ')[0] if ' في ' in full else full}.",
-        f"التواصل واتساب فقط حتى تبقى الصور والحي في محادثة واحدة.",
+        f"نبدأ من المصدر لا من العرض السريع، ثم نحدد عدة العمل حسب العقار.",
+        "التواصل واتساب فقط حتى تبقى الصور والحي في محادثة واحدة.",
     ]
+    heads = ["تشخيص قبل التنفيذ", "عرض مكتوب بعد المعاينة", f"خدمة ميدانية داخل {city}"]
     return (
         f'<section class="kayan-hero"><span>ركن التطور — البحرين</span>'
-        f"<h2>{pick(n, ['تشخيص قبل التنفيذ', 'عرض مكتوب بعد المعاينة', 'خدمة ميدانية داخل '+city])}</h2>"
+        f"<h2>{pick(n, heads)}</h2>"
         f"<p>{pick(n + 1, lines)}</p>"
         f'<a href="https://wa.me/{WA}"><i class="fa-brands fa-whatsapp"></i> واتساب {full}</a></section>'
     )
+
+
+def snippet_box(text: str) -> str:
+    return f'<aside class="kayan-snippet"><strong>مقتطف:</strong> {text}</aside>'
+
+
+def schema_ld(full: str, city: str, excerpt: str, faqs: list) -> str:
+    faq = {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {"@type": "Question", "name": f["question"], "acceptedAnswer": {"@type": "Answer", "text": f["answer"]}}
+            for f in faqs
+        ],
+    }
+    service = {
+        "@context": "https://schema.org",
+        "@type": "Service",
+        "name": full,
+        "description": excerpt,
+        "provider": {"@type": "LocalBusiness", "name": "ركن التطور", "areaServed": city},
+        "areaServed": {"@type": "City", "name": city, "containedInPlace": {"@type": "Country", "name": "Bahrain"}},
+    }
+    return (
+        f'<script type="application/ld+json">{json.dumps(faq, ensure_ascii=False)}</script>'
+        f'<script type="application/ld+json">{json.dumps(service, ensure_ascii=False)}</script>'
+    )
+
+
+def local_scene(service: str, city: str, info: dict, pack: dict, n: int) -> str:
+    areas = info["areas"]
+    a1 = areas[n % len(areas)]
+    a2 = areas[(n + 2) % len(areas)]
+    a3 = areas[(n + 4) % len(areas)]
+    frames = [
+        f"في {a1} يختلف المدخل عن {a2}: {info['access']} لذلك نطلب معلماً واضحاً قبل الخروج.",
+        f"حالة في {a3} قد تبدو مطابقة لجارة في {a1}، لكن {info['housing']} يغيّر العدة والزمن.",
+        f"{info['season']} وفي {a2} يظهر ذلك أسرع من {a3} لأن التعرض للشمس أو الرطوبة مختلف.",
+        f"لا ننسخ تقرير {a1} على {a2}. {pack['angle']}",
+    ]
+    return f"<p>{pick(n, frames)} {info['note']}</p>"
 
 
 def topical_sections(code: str, service: str, city: str, info: dict, full: str, kw: str, n: int) -> list[str]:
@@ -342,6 +492,7 @@ def topical_sections(code: str, service: str, city: str, info: dict, full: str, 
 
 def unique_intro(voice: int, full: str, kw: str, service: str, city: str, info: dict, pack: dict) -> str:
     a0 = info["areas"][0]
+    a1 = info["areas"][min(1, len(info["areas"]) - 1)]
     variants = [
         f"إذا لاحظت تغيراً في الراحة أو الفاتورة أو الرائحة داخل {city} فالمطلوب ليس «حلّاً سريعاً» يُعاد بعد أسبوع. "
         f"{pack['angle']} نقرأ العقار في {a0} وبقية الأحياء كحالة مستقلة: صور على واتساب، ثم معاينة، ثم عرض مكتوب.",
@@ -352,8 +503,19 @@ def unique_intro(voice: int, full: str, kw: str, service: str, city: str, info: 
         f"ركن التطور ينفّذ {service} داخل {city} بعد معاينة ميدانية. لا نثبت رقماً من الرسالة لأن {info['access']}",
         f"الفرق العملي: نغلق السبب لا العرض. {info['risk']} إن كان منزلك في {a0} أرسل أقرب معلم مع الصور.",
         f"{kw} يناسب من يريد تقريراً يفهمه لا جملاً عامة. {info['climate']} نكتب النطاق والمدة قبل البدء.",
+        f"في {a1} تختلف قصة المدخل عن {a0} حتى داخل {city}. {full} ليست قالباً يُلصق على كل عنوان. "
+        f"{info['note']}",
+        f"من يبحث عن {service} في {city} يريد عادةً معرفة المصدر والتكلفة بعد الرؤية لا قبلها. "
+        f"{pack['angle']} نثبت ذلك في واتساب بالصور.",
+        f"{info['climate']} هذا وحده يكفي لجعل نفس الخدمة في مدينة أخرى نتيجة مختلفة. "
+        f"لذلك {full} تُكتب بعد المعاينة لا من عنوان الرسالة.",
+        f"لا نبدأ بعدّة جاهزة. في {info['kind']} نسأل أولاً: أين العَرَض ومتى يظهر؟ ثم نزور {a0} أو الحي الذي تحدده. "
+        f"{info['risk']}",
+        f"طلب {service} من {a0} غير طلبها من {a1}: {info['access']} نرتّب النافذة بعد تأكيد المعلم.",
+        f"إذا عاد العَرَض بعد «حل سريع» فالمشكلة غالباً في التشخيص لا في اسم الخدمة. "
+        f"{full} عندنا مسار معاينة ثم عرض ثم تنفيذ.",
     ]
-    return variants[voice]
+    return variants[voice % len(variants)]
 
 
 def expand_unique(html: str, service: str, city: str, info: dict, full: str, pack: dict, n: int, target: int) -> str:
@@ -393,7 +555,8 @@ def expand_unique(html: str, service: str, city: str, info: dict, full: str, pac
         vis = visible_text(html)
         dens = vis.count(full) / max(wc, 1)
         i += 1
-    while wc < 1000:
+    pad = 0
+    while wc < 1000 and pad < 6:
         html = html.replace(
             "</article>",
             f"<p>للتقدم: أرسل موقعك في {city} عبر واتساب بخصوص {full} مع صورة واضحة للجزء المطلوب.</p></article>",
@@ -401,7 +564,7 @@ def expand_unique(html: str, service: str, city: str, info: dict, full: str, pac
         )
         wc = len(word_list(html))
         vis = visible_text(html)
-    need = max(0, int(round(0.008 * wc)) - vis.count(full))
+        pad += 1
     inserts = [
         f"<p>{full} تبدأ بالتشخيص الميداني لا بالسعر الجاهز.</p>",
         f"<p>اختر {full} إذا كنت تريد عرضاً مكتوباً بعد المعاينة.</p>",
@@ -411,9 +574,24 @@ def expand_unique(html: str, service: str, city: str, info: dict, full: str, pac
         f"<p>الفريق يصل بعد تأكيد المدخل لتنفيذ {full}.</p>",
         f"<p>لا نخلط {full} مع خدمة مجاورة في نفس العرض إلا ببند مكتوب.</p>",
         f"<p>المتابعة بعد {full} تكون عبر نفس محادثة واتساب.</p>",
+        f"<p>في {city} تُكتب نتيجة {full} بعد المعاينة لا قبلها.</p>",
+        f"<p>صور المدخل تختصر زمن {full} وتمنع عدة ناقصة.</p>",
+        f"<p>إن تغيّر العَرَض قبل الزيارة أرسل صورة محدّثة لـ {full}.</p>",
+        f"<p>التقرير جزء من {full} وليس مرفقاً اختيارياً.</p>",
+        f"<p>نرفض بدء {full} فوق سبب غير مشخص.</p>",
+        f"<p>عرض {full} يذكر المدة والخامة قبل التنفيذ.</p>",
+        f"<p>أحياء {city} لا تُعامل نسخة واحدة داخل {full}.</p>",
+        f"<p>واتساب يبقى مرجع الصور بعد تسليم {full}.</p>",
+        f"<p>العدة تتحدد في الموقع أثناء {full} حسب الارتفاع والمدخل.</p>",
+        f"<p>لا نثبت موعد {full} قبل تأكيد المعلم الأقرب.</p>",
     ]
     j = 0
+    vis = visible_text(html)
     while vis.count(full) / max(len(word_list(html)), 1) < 0.0075 and j < len(inserts):
+        nxt = vis.count(full) + 1
+        nxt_wc = len(word_list(html)) + len(word_list(inserts[(n + j) % len(inserts)]))
+        if nxt / max(nxt_wc, 1) > 0.0105:
+            break
         html = html.replace("</article>", inserts[(n + j) % len(inserts)] + "</article>", 1)
         vis = visible_text(html)
         j += 1
@@ -430,18 +608,25 @@ def build_payload(title: str, slug: str) -> dict:
     kw = f"{service} في {city}"
     full = title
     n = seed(title, slug)
-    voice = n % 6
+    voice = n % 12
     icon = ICONS.get(code, "fa-house-chimney")
     areas = info["areas"]
+    a0, a_last = areas[0], areas[-1]
 
     intro = unique_intro(voice, full, kw, service, city, info, pack)
+    if full not in intro:
+        intro = f"{intro} هذا سياق {full}."
     what = pick(
         n,
         [
-            f"<h2>ما هي خدمة {service}؟</h2><p>{pack['angle']} داخل {city} نربط ذلك بنوع العقار: {info['housing']}. "
+            f"<h2>ما الذي تشمله {service} داخل {city}؟</h2><p>{pack['angle']} نربط التنفيذ بنوع العقار: {info['housing']}. "
             f"الهدف نتيجة ثابتة بعد المعاينة لا زيارة تُعاد بلا تقرير.</p>",
-            f"<h2>متى تحتاج {service} داخل {city}؟</h2><p>عندما يتكرر العَرَض أو يرتفع أثره على الفاتورة أو راحة السكن. "
+            f"<h2>متى تستدعي {service} زيارة في {city}؟</h2><p>عندما يتكرر العَرَض أو يرتفع أثره على الفاتورة أو راحة السكن. "
             f"{info['risk']} علامتان فأكثر تستدعيان رسالة واتساب بصور الحي.</p>",
+            f"<h2>لمن تناسب {service} في أحياء مثل {a0}؟</h2><p>لمن يريد تشخيصاً مكتوباً قبل العدة. "
+            f"{info['kind']}. لا تناسب من يطلب رقماً ثابتاً من الرسالة دون صور.</p>",
+            f"<h2>ما الذي لا تفعله الزيارة؟</h2><p>لا نغلق عرضاً ونترك المصدر. في {city} {info['climate']} "
+            f"لذلك التشخيص أولاً ثم النطاق المكتوب.</p>",
         ],
     )
     signs = [
@@ -456,28 +641,18 @@ def build_payload(title: str, slug: str) -> dict:
         right_area = areas[i + 1] if i + 1 < len(areas) else areas[0]
         area_rows.append([f"{areas[i]} — {note_l}", f"{right_area} — {note_r}"])
 
-    cards = []
-    for i, item in enumerate(pack["services"][:4]):
-        cards.append(
-            f'<div class="kayan-card"><i class="fas {icon}"></i><h3>{item.split(" ")[0:3] and " ".join(item.split()[:4])}</h3><p>{item}</p></div>'
-        )
-
-    steps_html = []
-    labels = [("01", "واتساب"), ("02", "معاينة"), ("03", "عرض"), ("04", "تنفيذ")]
-    bodies = [
-        f"ترسل الحي في {city} وصورة تصف {service}.",
-        "نفحص المصدر لا العرض فقط ونشرح النتيجة.",
-        "تكلفة ومدة وخامة مكتوبة قبل البدء.",
-        "تنفيذ حسب التقرير ثم تسليم بعد معاينتك.",
-    ]
-    rot = n % 4
-    for i in range(4):
-        lab = labels[(rot + i) % 4]
-        steps_html.append(f'<div class="kayan-step"><div class="kayan-num">{lab[0]}</div><div><h3>{lab[1]}</h3><p>{bodies[(rot + i) % 4]}</p></div></div>')
-
-    causes = "".join(f"<li>{c}</li>" for c in pack["causes"])
-    tools = "".join(f"<li>{t}</li>" for t in pack["tools"])
-    tips = "".join(f"<li>{t}</li>" for t in pack["tips"])
+    causes = "".join(
+        f"<li>{c} — نلاحظه في {areas[(n + i) % len(areas)]} أكثر من وصف عام.</li>"
+        for i, c in enumerate(pack["causes"])
+    )
+    tools = "".join(
+        f"<li>{t} داخل {city} مع مراعاة {info['climate'][:36]}.</li>" if i == 0 else f"<li>{t}</li>"
+        for i, t in enumerate(pack["tools"])
+    )
+    tips_ul = "".join(
+        f"<li>{t} في {areas[(n + i + 1) % len(areas)]}.</li>" if i % 2 == 0 else f"<li>{t}</li>"
+        for i, t in enumerate(pack["tips"])
+    )
     mistakes = [
         f"طلب سعر ثابت دون معاينة داخل {info['kind']}.",
         f"إهمال {info['risk']} ثم انتظار عودة المشكلة.",
@@ -499,8 +674,85 @@ def build_payload(title: str, slug: str) -> dict:
         ["التواصل", "واتساب يحتفظ بالصور", "أرقام بلا أثر"],
     ]
 
-    related = [c for c in CITIES if c != city][:3]
-    links = "، ".join(f"{service} في {c}" for c in related)
+    related = [c for c in CITIES if c != city]
+    related = related[(n % max(len(related), 1)) :] + related[: (n % max(len(related), 1))]
+    links = "، ".join(f"{service} في {c}" for c in related[:3])
+
+    faqs_all = [
+        {"question": f"هل تغطون أحياء {city} مثل {a0}؟", "answer": f"نعم ضمن نطاق عملنا مثل {', '.join(areas[:4])}. نؤكد زمن الوصول بعد الحي."},
+        {"question": f"كم تستغرق {service} داخل {city}؟", "answer": f"المدة تُكتب بعد المعاينة. في {info['kind']} الظاهر أقصر من الخفي."},
+        {"question": "هل يوجد ضمان مكتوب؟", "answer": "نطاق الضمان والخامة يُذكران في عرض السعر قبل البدء."},
+        {"question": "لماذا لا يُثبت السعر من الرسالة؟", "answer": f"لأن {info['housing']} يغيّر العدة والوقت. الرقم بلا معاينة يضلل الطرفين."},
+        {"question": "ماذا أرسل قبل الزيارة؟", "answer": f"وصف الحي في {city}، صور واضحة، وأقرب معلم. الباقي يُستكمل في الموقع."},
+        {"question": f"هل تناسب الشقق والفلل في {city}؟", "answer": f"نعم مع اختلاف العدة حسب {info['kind']}."},
+        {"question": "كيف أتواصل؟", "answer": "واتساب فقط حتى تبقى الصور والعنوان في محادثة واحدة. لا نعتمد الاتصال الهاتفي."},
+        {"question": "هل تشمل الزيارة قطعاً أو مواد؟", "answer": "إن لزم بند إضافي يُذكر في العرض منفصلاً إلا إذا اتُفق كتابياً."},
+        {"question": f"متى تكون الحالة طارئة في {city}؟", "answer": "تسرب ظاهر أو انقطاع تبريد أو خطر كهرباء. نرتّب أقرب نافذة بعد تأكيد العنوان."},
+        {"question": f"هل تعملون في {a0} و{a_last}؟", "answer": f"نعم. نطلب وصفاً للمدخل لأن {info['access']}"},
+        {"question": f"ما الذي يميّز التنفيذ في {city} عن مدينة أخرى؟", "answer": f"{info['climate']} {info['note']}"},
+        {"question": "هل تزورون أكثر من مرة؟", "answer": "إن لزم جفاف أو خامة نكتبه في العرض. لا نعد بإنهاء كل شيء في ساعات إن كانت الحالة لا تسمح."},
+    ]
+    faqs = [faqs_all[(n + i * 3) % len(faqs_all)] for i in range(8 + (n % 3))]
+
+    feat_src = pack["services"][n % max(len(pack["services"]), 1) :] + pack["services"][: n % max(len(pack["services"]), 1)]
+    feat_items = [{"title": " ".join(x.split()[:4]), "content": f"{x} — نناقشه في معاينة {city}."} for x in feat_src[:6]]
+    step_items = [
+        {"title": pick(n, ["استلام الطلب", "رسالة واتساب", "تأكيد العنوان"]), "content": f"واتساب مع الحي في {city} وصورة تصف {service}."},
+        {"title": pick(n + 1, ["المعاينة الميدانية", "التشخيص", "قراءة المصدر"]), "content": f"نفحص المصدر لا العرض. {info['note']}"},
+        {"title": pick(n + 2, ["العرض المكتوب", "نطاق العمل", "اعتماد البنود"]), "content": "نطاق ومدة وخامة قبل البدء. لا نبدأ دون اعتماد."},
+        {"title": pick(n + 3, ["التنفيذ والتسليم", "إغلاق الملف", "المعاينة النهائية"]), "content": "عمل حسب التقرير ثم معاينتك على واتساب إن لزم توثيق."},
+    ]
+    svc_items = [{"title": s, "content": f"{s} حسب حالة العقار في {city} و{a0}."} for s in feat_src[:5]]
+    price_items = [
+        {"title": r[0], "value": pick(n + i, ["بعد المعاينة", f"يُحدَّد في {city}", "يُكتب في العرض"])}
+        for i, r in enumerate(price_rows)
+    ]
+
+    excerpt = f"{full}: معاينة في {info['kind']} ثم عرض مكتوب. واتساب {WA} — بدون اتصال هاتفي."
+    rm_title = f"{full} | ركن التطور البحرين"
+    rm_desc = f"{full} بعد معاينة ميدانية. تشخيص مكتوب قبل التنفيذ. تواصل واتساب لحجز الموعد في {city}."
+    if len(rm_desc) > 160:
+        rm_desc = rm_desc[:157] + "…"
+
+    blocks = {
+        "features": kayan_features(f"مميزات التنفيذ في {city}", f"بنود نناقشها أثناء معاينة {service} وليست قائمة تسويق عامة.", feat_items, icon),
+        "steps": kayan_steps(f"خطوات {service} في {city}", f"مسار واضح من الرسالة حتى التسليم داخل {a0} وبقية الأحياء.", step_items),
+        "services": kayan_services(f"نطاق {service}", f"قد يُستبعد بند إن لم يلزم لحالتك في {city}.", svc_items),
+        "prices": kayan_prices(f"عوامل تسعير {service} في {city}", "لا أسعار مخترعة. القيمة تُكتب بعد المعاينة.", price_items),
+        "call": kayan_call(f"هل تحتاج {service} في {city}؟", "أرسل الحي والصور على واتساب لتحديد المعاينة. بدون اتصال هاتفي."),
+        "body": "",
+    }
+
+    refuse = pick(
+        n,
+        [
+            f"<h2>ما الذي نرفضه في {city}؟</h2><p>نرفض تثبيت سعر قبل الرؤية، وخلط خدمة مجاورة في نفس الفاتورة دون بند، "
+            f"والعمل فوق رطوبة أو عطل غير مشخص. {info['risk']}</p>",
+            f"<h2>حدود الزيارة في {a0}</h2><p>{info['access']} إن تعذر التوقف أو الرفع نكتب بديلاً قبل التحرك. "
+            f"هذا أوضح من الاعتذار بعد الوصول.</p>",
+        ],
+    )
+    topical = topical_sections(code, service, city, info, full, kw, n)
+    mid_body = [
+        what,
+        local_scene(service, city, info, pack, n),
+        f"<h2>علامات تساعدك تقرر في {city}</h2><p>الجدول قراءة ميدانية لا قائمة تسويق.</p>{table(['العلامة','المعنى','إن أُجِّل في '+city], signs)}",
+        *topical,
+        f"<h2>أسباب تتكرر حول {a0}</h2><ul>{causes}</ul>{warn(info['risk'])}",
+        f"<h2>الأدوات والخامات المناسبة لمناخ {city}</h2><ul>{tools}</ul>",
+        refuse,
+        f"<h2>أخطاء ترفع التكلفة داخل {city}</h2><ul>{''.join(f'<li>{x}</li>' for x in mistakes)}</ul>",
+        f"<h2>كيف تُقاس تكلفة {service} هنا؟</h2><p>لا نخترع أسعاراً ثابتة. هذه عوامل القياس بعد المعاينة في {city}.</p>{table(['العامل','كيف يظهر محلياً'], price_rows)}",
+        f"<h2>مقارنة قرار التنفيذ في {city}</h2>{table(['المعيار','ركن التطور','الشائع'], cmp_rows)}",
+        f"<h2>نصائح قبل زيارة {a_last}</h2><ul>{tips_ul}</ul>{tip('نصيحة', info['note'])}",
+        f"<h2>نطاق الأحياء داخل {city}</h2><p>نغطي المدينة حسب وصف المدخل لا حسب اسم عام.</p>{table(['نطاق','نطاق مجاور'], area_rows)}",
+        area_tour(city, info, kw, full, n),
+        f"<p>خدمات باسم مشابه في مدن أخرى لا تعني نفس العدة: {links}. أرسل حالتك الحالية أولاً حتى لا تُخلط الزيارة.</p>",
+        f"<h2>الخلاصة</h2><p>{full} يُحسم بالتشخيص داخل {city}. {pack['angle']} "
+        f"إن كنت في {a0} أو {a_last} أرسل الصور على واتساب.</p>",
+    ]
+    rot_body = (n // 5) % max(len(mid_body) - 2, 1)
+    mid_body = [mid_body[0], *mid_body[1 + rot_body :], *mid_body[1 : 1 + rot_body]]
 
     sc_order = pick(
         n // 7,
@@ -512,83 +764,43 @@ def build_payload(title: str, slug: str) -> dict:
             ["steps", "body", "services", "features", "prices", "call"],
         ],
     )
-    short = {
-        "features": "\n[post_features]\n",
-        "steps": "\n[post_steps]\n",
-        "services": "\n[post_services]\n",
-        "prices": "\n[post_prices]\n",
-        "call": "\n[post_call]\n",
-        "body": "",
-    }
 
-    topical = topical_sections(code, service, city, info, full, kw, n)
-    mid_body = [
-        what,
-        f"<h2>علامات تساعدك تقرر</h2><p>الجدول قراءة ميدانية لا قائمة تسويق.</p>{table(['العلامة','المعنى','إن أُجِّل في '+city], signs)}",
-        f"<h2>كيف نعمل داخل أحياء {city}؟</h2><div class='kayan-cards'>{''.join(cards)}</div>",
-        f"<h2>مسار التنفيذ</h2><div class='kayan-steps'>{''.join(steps_html)}</div>{tip('نصيحة', info['note'])}",
-        *topical,
-        f"<h2>أسباب تتكرر في {city}</h2><ul>{causes}</ul>{warn(info['risk'])}",
-        f"<h2>الأدوات والخامات المناسبة</h2><ul>{tools}</ul>",
-        f"<h2>أخطاء ترفع التكلفة</h2><ul>{''.join(f'<li>{x}</li>' for x in mistakes)}</ul>",
-        f"<h2>كم تكلفة {service} في {city}؟</h2><p>لا نخترع أسعاراً ثابتة. هذه عوامل القياس بعد المعاينة.</p>{table(['العامل','كيف يظهر محلياً'], price_rows)}",
-        f"<h2>مقارنة قرار التنفيذ</h2>{table(['المعيار','ركن التطور','الشائع'], cmp_rows)}",
-        f"<h2>نصائح قبل الزيارة</h2><ul>{tips}</ul>",
-        f"<h2>نطاق الأحياء</h2><p>نغطي {city} حسب وصف المدخل لا حسب اسم عام.</p>{table(['نطاق','نطاق مجاور'], area_rows)}",
-        f"<p>خدمات مرتبطة قد تحتاجها لاحقاً: {links}. أرسل حالتك الحالية أولاً حتى لا تُخلط الزيارة.</p>",
-        f"<h2>الخلاصة</h2><p>{full} يُحسم بالتشخيص داخل {city}. {pack['angle']} "
-        f"إن كنت في {areas[0]} أو {areas[-1]} أرسل الصور على واتساب.</p>",
+    parts = [
+        style_block(),
+        '<article class="kayan-article">',
+        f'<img src="{IMG}" alt="{full} — ركن التطور البحرين" width="800" height="450" loading="eager" decoding="async"/>',
+        f"<p>{intro}</p>",
+        snippet_box(excerpt),
+        hero(full, city, n),
     ]
-
-    parts = [style_block(), '<article class="kayan-article">', f'<img src="{IMG}" alt="{full} في البحرين" width="800" height="450" loading="eager" decoding="async"/>',
-             f"<p>{intro}</p>", hero(full, city, n)]
     body_inserted = False
     for key in sc_order:
         if key == "body":
             parts.extend(mid_body)
             body_inserted = True
         else:
-            parts.append(short[key])
+            parts.append(blocks[key])
     if not body_inserted:
         parts.extend(mid_body)
+    parts.append(kayan_faq(faqs))
+    parts.append(schema_ld(full, city, excerpt, faqs))
     parts.append("</article>")
     html = "\n".join(parts)
-    html = expand_unique(html, service, city, info, full, pack, n, LEN_TARGET[pack["len"]])
+    html = expand_unique(html, service, city, info, full, pack, n, LEN_TARGET.get(pack["len"], 1450))
 
-    faqs = [
-        {"question": f"هل تغطون كل أحياء {city}؟", "answer": f"نعم ضمن نطاق عملنا مثل {', '.join(areas[:4])}. نؤكد زمن الوصول بعد الحي."},
-        {"question": f"كم تستغرق خدمة {service}؟", "answer": "المدة تُكتب بعد المعاينة. الظاهر أقصر من الخفي أو من الأسطح الواسعة."},
-        {"question": f"هل يوجد ضمان؟", "answer": "نطاق الضمان والخامة يُذكران في عرض السعر قبل البدء."},
-        {"question": f"لماذا لا يُثبت السعر من الرسالة؟", "answer": f"لأن {info['housing']} يغيّر العدة والوقت. الرقم بلا معاينة يضلل الطرفين."},
-        {"question": f"ماذا أرسل قبل الزيارة؟", "answer": "وصف الحي، صور، وأقرب معلم. الباقي على الموقع."},
-        {"question": f"هل تناسب الشقق والفلل؟", "answer": f"نعم مع اختلاف العدة حسب {info['kind']}."},
-        {"question": f"كيف أتواصل؟", "answer": "واتساب فقط حتى تبقى الصور والعنوان في محادثة واحدة."},
-        {"question": f"هل تشمل الزيارة قطع الغيار؟", "answer": "إن لزم قطعة تُذكر في العرض منفصلة إلا إذا اتُفق كتابياً."},
-        {"question": f"متى تكون الحالة طارئة؟", "answer": "تسرب ظاهر أو انقطاع تبريد أو خطر كهرباء. نرتّب أقرب نافذة بعد تأكيد العنوان."},
-        {"question": f"هل تعملون في {areas[0]} و{areas[-1]}؟", "answer": f"نعم. نطلب وصفاً للمدخل لأن {info['access']}"},
-    ]
-    faqs = [faqs[(n + i) % len(faqs)] for i in range(8 + (n % 3))]
-
-    feat_items = [
-        {"title": x[:42], "content": x, "icon": f'<i class="fas {icon}"></i>'}
-        for x in pack["services"][:6]
-    ]
-    step_items = [
-        {"title": "استلام الطلب", "content": f"واتساب مع الحي في {city} وصورة {service}."},
-        {"title": "المعاينة", "content": "تشخيص المصدر لا العرض فقط."},
-        {"title": "العرض المكتوب", "content": "نطاق ومدة وخامة قبل البدء."},
-        {"title": "التنفيذ والتسليم", "content": "عمل حسب التقرير ثم معاينتك."},
-    ]
-    svc_items = [{"title": s, "content": f"{s} حسب حالة العقار في {city}."} for s in pack["services"][:5]]
-    price_items = [{"title": r[0], "value": "بعد المعاينة"} for r in price_rows]
-
-    excerpt = f"{full}: معاينة في {info['kind']} ثم عرض مكتوب. واتساب {WA} — بدون اتصال هاتفي."
-    rm_title = f"{full} 2026 | ركن التطور"
-    rm_desc = f"{full} بعد معاينة ميدانية في {city}. تشخيص مكتوب قبل التنفيذ. تواصل واتساب لحجز الموعد."
-    if len(rm_desc) > 160:
-        rm_desc = rm_desc[:157] + "…"
-
-    tags = [service, city, "ركن التطور", "البحرين", pack["services"][0][:24]]
+    tags = [service, city, "ركن التطور", "البحرين", " ".join(pack["services"][0].split()[:3])]
+    meta = {k: v for k, v in {
+        "whatsapp_number": WA,
+        "hide__card__callbutton": "1",
+        "hide__service__callbutton": "1",
+        "hide__floating__call": "1",
+        "whatsapp_chat_mode": "1",
+        "floating_whatsapp_chat_mode": "1",
+        "last_update": "09-09-2026",
+        "rank_math_title": rm_title,
+        "rank_math_description": rm_desc,
+        "rank_math_focus_keyword": full,
+    }.items() if k in STRING_META}
     return {
         "html": html,
         "excerpt": excerpt,
@@ -600,64 +812,7 @@ def build_payload(title: str, slug: str) -> dict:
         "kw": kw,
         "code": code,
         "tags": tags,
-        "meta": {
-            "whatsapp_number": WA,
-            "hide__card__callbutton": "1",
-            "hide__service__callbutton": "1",
-            "hide__floating__call": "1",
-            "whatsapp_chat_mode": "1",
-            "floating_whatsapp_chat_mode": "1",
-            "last_update": "09-09-2026",
-            "rank_math_title": rm_title,
-            "rank_math_description": rm_desc,
-            "rank_math_focus_keyword": full,
-            "yourcolor__faqs": faqs,
-            "post__features__data": {
-                "features__title": f"مميزات التنفيذ في {city}",
-                "features__content": f"بنود نناقشها أثناء معاينة {service}.",
-                "yourcolor__post_features": feat_items,
-            },
-            "post__work_steps__data": {
-                "work_steps__title": f"خطوات {service}",
-                "work_steps__content": f"مسار واضح داخل {city} من الرسالة حتى التسليم.",
-                "work_steps_items": step_items,
-            },
-            "post__services__data": {
-                "services__title": f"نطاق {service}",
-                "services__content": "قد يُستبعد بند إن لم يلزم لحالتك.",
-                "post_services_items": svc_items,
-            },
-            "post__price_list__data": {
-                "price_list__title": f"عوامل تسعير {service} في {city}",
-                "price_list__content": "لا أسعار مخترعة. القيمة تُكتب بعد المعاينة.",
-                "price_list__table_title1": "العامل",
-                "price_list__table_title2": "التحديد",
-                "price_list__items": price_items,
-            },
-            "post__call_section__data": {
-                "call_section_title": f"هل تحتاج {service} في {city}؟",
-                "call_section_content": "أرسل الحي والصور على واتساب لتحديد المعاينة.",
-                "call_section_whatsapp": WA,
-            },
-            "post__card__data": {
-                "post_card_title": full,
-                "post_card_content": excerpt,
-                "hide__card__callbutton": "1",
-                "whatsapp_chat_mode": "1",
-            },
-            "YourColor_Service": {
-                "description": rm_desc,
-                "addressLocality": city,
-                "addressCountry": "BH",
-                "addressRegion": "البحرين",
-                "areaServed": city,
-            },
-            "YourColor_Article": {
-                "headline": full,
-                "description": rm_desc,
-                "articleBody": excerpt,
-            },
-        },
+        "meta": meta,
     }
 
 
@@ -728,18 +883,27 @@ def update_one(post: dict) -> tuple[int, str, int, float]:
     cid = CITY_IDS.get(built["city"])
     if cid:
         payload["cities"] = [cid]
+    payload["meta"] = built["meta"]
     code, out = req("POST", f"/wp/v2/posts/{pid}", payload)
     if code not in (200, 201):
-        return pid, f"err{code}:{str(out)[:80]}", built["wc"], built["dens"]
+        payload.pop("meta", None)
+        code, out = req("POST", f"/wp/v2/posts/{pid}", payload)
+        if code not in (200, 201):
+            return pid, f"err{code}:{str(out)[:80]}", built["wc"], built["dens"]
     slug_city = CITY_SLUG.get(built["city"])
     if slug_city:
         cli(f"post term set {pid} cities {slug_city}", write=True)
     fail_meta = 0
-    for k, v in built["meta"].items():
-        if not set_meta(pid, k, v):
+    for k in ("rank_math_title", "rank_math_description", "rank_math_focus_keyword", "whatsapp_number",
+              "hide__floating__call", "whatsapp_chat_mode"):
+        if k in built["meta"] and not set_meta(pid, k, built["meta"][k]):
             fail_meta += 1
     st = "ok" if fail_meta == 0 else f"ok-meta{fail_meta}"
     return pid, st, built["wc"], built["dens"]
+
+
+def _tokens(text: str) -> set[str]:
+    return {w for w in re.findall(r"\w{3,}", text) if w}
 
 
 def sample_report() -> None:
@@ -754,17 +918,47 @@ def sample_report() -> None:
     print("=== kayan sample quality ===")
     leads = []
     h2sets = []
+    bodies = []
     for t, s in samples:
         b = build_payload(t, s)
         html = b["html"]
+        vis = visible_text(html)
         print(
             f"{t}: words={b['wc']} dens={b['dens']:.3%} tables={html.count('<table')} "
-            f"sc={html.count('[post_')} h2={html.count('<h2')} tel={'tel:' in html}"
+            f"feat={html.count('yc-shortcode--features')} steps={html.count('yc-shortcode--work-steps')} "
+            f"svc={html.count('yc-shortcode--post-services')} prices={html.count('yc-shortcode--price_list')} "
+            f"faq={html.count('-YC-FaqsSimple-vsingle')} call={html.count('yc-shortcode--section--contactus')} "
+            f"sc={html.count('[post_')} h2={html.count('<h2')} tel={'tel:' in html} ld={'application/ld+json' in html}"
         )
-        leads.append(visible_text(html)[:280])
-        h2sets.append(tuple(re.findall(r"<h2>(.*?)</h2>", html)[:8]))
+        if b["wc"] < 1000:
+            print("  WARN short")
+        if not (0.0065 <= b["dens"] <= 0.012):
+            print("  WARN density")
+        leads.append(vis[:280])
+        h2sets.append(tuple(re.findall(r"<h2(?:\s[^>]*)?>(.*?)</h2>", html)[:10]))
+        bodies.append(_tokens(vis))
     print("unique_leads", len(set(leads)), "/", len(leads))
     print("unique_h2", len(set(h2sets)), "/", len(h2sets))
+    jacc = []
+    for i in range(len(bodies)):
+        for j in range(i + 1, len(bodies)):
+            a, c = bodies[i], bodies[j]
+            if not a or not c:
+                continue
+            jacc.append(len(a & c) / max(len(a | c), 1))
+    if jacc:
+        print(f"pairwise_jaccard max={max(jacc):.3f} mean={sum(jacc)/len(jacc):.3f}")
+    city_pair = []
+    for city, slug_c in [("المنامة", "manama"), ("المحرق", "muharraq"), ("الرفاع", "riffa"), ("سترة", "sitra")]:
+        b = build_payload(f"شركة تنظيف منازل في {city}", f"home-cleaning-{slug_c}")
+        city_pair.append(_tokens(visible_text(b["html"])))
+    cj = []
+    for i in range(len(city_pair)):
+        for j in range(i + 1, len(city_pair)):
+            a, c = city_pair[i], city_pair[j]
+            cj.append(len(a & c) / max(len(a | c), 1))
+    if cj:
+        print(f"same_service_city_jaccard max={max(cj):.3f} mean={sum(cj)/len(cj):.3f}")
 
 
 def main() -> int:
@@ -782,7 +976,7 @@ def main() -> int:
     ok = err = 0
     wmin = 10**9
     dmin = 1.0
-    with ThreadPoolExecutor(max_workers=4) as pool:
+    with ThreadPoolExecutor(max_workers=6) as pool:
         futs = [pool.submit(update_one, p) for p in posts]
         for i, fut in enumerate(as_completed(futs), 1):
             pid, st, wc, dens = fut.result()
