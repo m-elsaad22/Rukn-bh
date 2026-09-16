@@ -1,0 +1,40 @@
+<style id="rukn-bh-hide-call">a[href^="tel:"],.fab-call,.btn-call,.header-phone,a[href="#rukn-no-call"],[data-rukn-call]{display:none!important}nav.menu{display:flex;flex-wrap:wrap;gap:14px;align-items:center}nav.menu a{color:#fff;font-family:Cairo,sans-serif;font-weight:700;font-size:14.5px;text-decoration:none;white-space:nowrap}#ruknMob a.rukn-nav-link{display:block;color:#fff;padding:10px 0;font-family:Cairo,sans-serif;font-weight:700}</style>
+<script>
+(function(){
+  var WA='971586634710';
+  var HOME='https://rukn-eltatawer.com/bh';
+  var links=[['الرئيسية',HOME+'/'],['خدماتنا',HOME+'/our-services/'],['المدن',HOME+'/cities/'],['من نحن',HOME+'/about-us/'],['تواصل معنا',HOME+'/contact-us/'],['English',HOME+'/home-services-bahrain/'],['خريطة الموقع',HOME+'/html-sitemap/']];
+  function menuHtml(){var h='';for(var i=0;i<links.length;i++){h+='<a class="rukn-nav-link" href="'+links[i][1]+'">'+links[i][0]+'</a>';}return h;}
+  function fix(){
+    var nav=document.querySelector('nav.menu');
+    if(nav&&!nav.querySelector('a')){nav.innerHTML=menuHtml();}
+    var mob=document.querySelector('#ruknMob');
+    if(mob&&!mob.querySelector('a.rukn-nav-link')){
+      var wa=mob.querySelector('a.btn-wa');
+      var box=document.createElement('div');box.innerHTML=menuHtml();
+      while(box.firstChild){if(wa){mob.insertBefore(box.firstChild,wa);}else{mob.appendChild(box.firstChild);}}
+    }
+    var dead=document.querySelectorAll('a[href^="tel:"],a.fab-call,a.btn-call');
+    for(var d=0;d<dead.length;d++){dead[d].parentNode&&dead[d].parentNode.removeChild(dead[d]);}
+    var ix=document.querySelectorAll('a[href*="index.php/"]');
+    for(var x=0;x<ix.length;x++){ix[x].href=ix[x].href.replace('/index.php/','/');}
+    var labels=document.querySelectorAll('[aria-label="اختر الإمارة"]');
+    for(var l=0;l<labels.length;l++){labels[l].setAttribute('aria-label','اختر المدينة');}
+    var walk=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT,null);
+    var n;while(n=walk.nextNode()){
+      if(n.nodeValue&&n.nodeValue.indexOf('اختر الإمارة')!==-1){n.nodeValue=n.nodeValue.replace(/اختر الإمارة/g,'اختر المدينة');}
+      if(n.nodeValue&&n.nodeValue.indexOf('دبي، الإمارات')!==-1){n.nodeValue=n.nodeValue.replace(/دبي، الإمارات العربية المتحدة/g,'المنامة، مملكة البحرين');}
+    }
+    var eg=document.querySelectorAll('a[href*="wa.me/201151481000"]');
+    for(var e=0;e<eg.length;e++){eg[e].outerHTML='<span class="kayan-credit">KAYAN WEB</span>';}
+    var waLinks=document.querySelectorAll('a[href*="wa.me/"]');
+    for(var w=0;w<waLinks.length;w++){if(waLinks[w].href.indexOf('201151481000')===-1){waLinks[w].href='https://wa.me/'+WA;}}
+    if(!document.getElementById('rukn-bh-local-schema')){
+      var s=document.createElement('script');s.type='application/ld+json';s.id='rukn-bh-local-schema';
+      s.text='{"@context":"https://schema.org","@type":"HomeAndConstructionBusiness","name":"ركن التطور - البحرين","url":"https://rukn-eltatawer.com/bh","telephone":"+971586634710","address":{"@type":"PostalAddress","streetAddress":"المنامة","addressLocality":"المنامة","addressCountry":"BH"},"areaServed":"Bahrain","contactPoint":{"@type":"ContactPoint","contactType":"customer support","url":"https://wa.me/971586634710"}}';
+      document.head.appendChild(s);
+    }
+  }
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',fix);}else{fix();}
+})();
+</script>
