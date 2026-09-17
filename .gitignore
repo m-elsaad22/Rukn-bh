@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+*.oplusdownload
+reports/cache/
+reports/*.jsonl
+reports/*.json
