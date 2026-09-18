@@ -41,8 +41,9 @@ add_action(
 		if ( get_option( 'phonenumber' ) !== RUKN_BH_TEL ) {
 			update_option( 'phonenumber', RUKN_BH_TEL, false );
 		}
-		if ( get_option( 'rukn_hide_call_global' ) === 'on' ) {
-			update_option( 'rukn_hide_call_global', '', false );
+		$hide_call = get_option( 'rukn_hide_call_global' );
+		if ( $hide_call === 'on' || $hide_call === 'off' ) {
+			delete_option( 'rukn_hide_call_global' );
 		}
 	},
 	1
@@ -276,14 +277,20 @@ if ( ! function_exists( 'rukn_bh_apply_markup_fixes' ) ) {
 			$html = str_replace( '<nav class="menu"></nav>', '<nav class="menu">' . rukn_bh_menu_html() . '</nav>', $html );
 		}
 
-		if ( strpos( $html, 'id="ruknMob"' ) !== false && strpos( $html, 'rukn-nav-link' ) === false ) {
+		if ( strpos( $html, 'id="ruknMob"' ) !== false && strpos( $html, 'class="rukn-nav-link"' ) === false ) {
 			$html = preg_replace(
-				'#(<div class="mob" id="ruknMob">[\s\S]*?<a href="https://wa\.me/' . preg_quote( $wa, '#' ) . '"[\s\S]*?</a>)#',
+				'#(<div class="mob" id="ruknMob">[\s\S]*?class="mob-search"[\s\S]*?</button>)#',
 				'$1' . rukn_bh_menu_html(),
 				$html,
 				1
 			);
 		}
+
+		$html = preg_replace(
+			'#(<img\b[^>]*class="[^"]*YourColor--Theme--image[^"]*"[^>]*?)\sdata-loader-src="([^"]+)"#',
+			'$1 src="$2"',
+			$html
+		);
 
 		return $html;
 	}
@@ -334,6 +341,11 @@ if ( ! function_exists( 'rukn_bh_fix_html' ) ) {
 			return $html;
 		}
 
+		$lead = ltrim( $html );
+		if ( stripos( $lead, '<html' ) === false && stripos( $lead, '<!doctype html' ) === false ) {
+			return $html;
+		}
+
 		$parts = preg_split( '#(<(?:style|script|noscript)\b[^>]*>.*?</(?:style|script|noscript)>)#is', $html, -1, PREG_SPLIT_DELIM_CAPTURE );
 		if ( is_array( $parts ) && count( $parts ) > 1 ) {
 			$out = '';
@@ -370,7 +382,7 @@ add_filter( 'the_excerpt', 'rukn_bh_apply_markup_fixes', 5 );
 add_action(
 	'wp_head',
 	static function () {
-		echo '<style id="rukn-bh-ui">#ruknFab.fab-stack,.fab-stack{opacity:1!important;visibility:visible!important;transform:none!important}#ruknMob a.rukn-nav-link{display:block;padding:12px 0;font-family:Cairo,sans-serif;font-weight:700;color:#fff}</style>';
+		echo '<style id="rukn-bh-ui">#ruknFab.fab-stack,.fab-stack{opacity:1!important;visibility:visible!important;transform:none!important}#ruknMob a.rukn-nav-link{display:block;padding:12px 0;font-family:Cairo,sans-serif;font-weight:700;color:#fff}header .logo img,.kayan-logo-img{display:block!important;max-height:56px!important;max-width:min(55vw,240px)!important;width:auto!important;height:auto!important;opacity:1!important;visibility:visible!important;object-fit:contain!important}</style>';
 	},
 	99
 );
