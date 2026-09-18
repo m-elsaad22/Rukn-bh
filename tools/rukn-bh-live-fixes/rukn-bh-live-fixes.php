@@ -179,7 +179,7 @@ if ( ! function_exists( 'rukn_bh_ui_css' ) ) {
 			. 'header#hdr .logo b{color:#fff;font-family:Cairo,sans-serif;font-weight:900;font-size:18px;white-space:nowrap}'
 			. 'header#hdr.scrolled{background:rgba(255,255,255,.78)!important}'
 			. 'header#hdr.scrolled .logo b{color:var(--navy,#0A1F4E)}'
-			. '@media(max-width:768px){header#hdr nav.menu{display:none!important}header#hdr .nav-cta .btn{display:none!important}}';
+			. '@media(max-width:768px){header#hdr nav.menu,header#hdr nav.menu a{display:none!important;visibility:hidden!important}header#hdr .nav-cta .btn{display:none!important}}';
 	}
 }
 
