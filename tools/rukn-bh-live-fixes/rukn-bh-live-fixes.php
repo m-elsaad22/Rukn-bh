@@ -72,16 +72,20 @@ add_filter(
 	}
 );
 
-function rukn_bh_request_path() {
-	$path = wp_parse_url( $_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH );
-	$path = is_string( $path ) ? $path : '/';
-	return untrailingslashit( $path );
+if ( ! function_exists( 'rukn_bh_request_path' ) ) {
+	function rukn_bh_request_path() {
+		$path = wp_parse_url( $_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH );
+		$path = is_string( $path ) ? $path : '/';
+		return untrailingslashit( $path );
+	}
 }
 
-function rukn_bh_home_path() {
-	$path = wp_parse_url( home_url( '/' ), PHP_URL_PATH );
-	$path = is_string( $path ) ? $path : '/';
-	return untrailingslashit( $path );
+if ( ! function_exists( 'rukn_bh_home_path' ) ) {
+	function rukn_bh_home_path() {
+		$path = wp_parse_url( home_url( '/' ), PHP_URL_PATH );
+		$path = is_string( $path ) ? $path : '/';
+		return untrailingslashit( $path );
+	}
 }
 
 add_action(
@@ -143,6 +147,7 @@ add_action(
 	-1
 );
 
+if ( ! function_exists( 'rukn_bh_menu_links' ) ) {
 function rukn_bh_menu_links() {
 	$home = 'https://rukn-eltatawer.com/bh';
 	return array(
@@ -155,7 +160,9 @@ function rukn_bh_menu_links() {
 		array( 'خريطة الموقع', $home . '/html-sitemap/' ),
 	);
 }
+}
 
+if ( ! function_exists( 'rukn_bh_menu_html' ) ) {
 function rukn_bh_menu_html() {
 	$html = '';
 	foreach ( rukn_bh_menu_links() as $item ) {
@@ -163,7 +170,9 @@ function rukn_bh_menu_html() {
 	}
 	return $html;
 }
+}
 
+if ( ! function_exists( 'rukn_bh_schema_json' ) ) {
 function rukn_bh_schema_json() {
 	$wa   = RUKN_BH_WA;
 	$data = array(
@@ -190,7 +199,9 @@ function rukn_bh_schema_json() {
 	);
 	return '<script type="application/ld+json" id="rukn-bh-local-schema">' . wp_json_encode( $data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES ) . '</script>';
 }
+}
 
+if ( ! function_exists( 'rukn_bh_fix_html' ) ) {
 function rukn_bh_fix_html( $html ) {
 	if ( ! is_string( $html ) || $html === '' ) {
 		return $html;
@@ -202,6 +213,7 @@ function rukn_bh_fix_html( $html ) {
 	$html = str_replace(
 		array(
 			'دبي، الإمارات العربية المتحدة',
+			'دبي، الإمارات',
 			'Dubai, United Arab Emirates',
 			'اختر الإمارة',
 			'https://www.rukn-eltatawer.com/bh/index.php/',
@@ -230,6 +242,7 @@ function rukn_bh_fix_html( $html ) {
 			'content="ar_AR"',
 		),
 		array(
+			'المنامة، مملكة البحرين',
 			'المنامة، مملكة البحرين',
 			'Manama, Kingdom of Bahrain',
 			'اختر المدينة',
@@ -273,6 +286,11 @@ function rukn_bh_fix_html( $html ) {
 		'<span class="kayan-credit">KAYAN WEB</span>',
 		$html
 	);
+	$html = str_replace(
+		array( 'https://wa.me/201151481000', 'https://wa.me/+201151481000', '201151481000' ),
+		array( 'https://wa.me/' . $wa, 'https://wa.me/' . $wa, $wa ),
+		$html
+	);
 
 	$html = preg_replace(
 		'#https://wa\.me/\+?971586634710#',
@@ -311,6 +329,7 @@ function rukn_bh_fix_html( $html ) {
 	}
 
 	return $html;
+}
 }
 
 add_filter( 'the_content', 'rukn_bh_fix_html', 5 );
