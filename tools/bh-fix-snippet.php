@@ -171,7 +171,7 @@ if ( ! function_exists( 'rukn_bh_ui_css' ) ) {
 		return '#ruknFab.fab-stack,.fab-stack{opacity:1!important;visibility:visible!important;transform:none!important}'
 			. '#ruknMob a.rukn-nav-link{display:block;padding:12px 0;font-family:Cairo,sans-serif;font-weight:700;color:#fff}'
 			. 'header#hdr,header#hdr .wrap.nav{left:0!important;right:0!important;inset-inline:0!important;width:100%!important;max-width:none!important;flex-wrap:nowrap!important}'
-			. 'header#hdr{background:transparent!important;overflow:hidden}'
+			. 'header#hdr{background:transparent!important}'
 			. 'header#hdr::before{content:none!important;display:none!important;opacity:0!important;visibility:hidden!important;background:transparent!important;transform:translateY(-100%)!important}'
 			. 'header#hdr .logo .mark{display:none!important}'
 			. 'header#hdr .logo img,.kayan-logo-img{display:block!important;max-height:42px!important;max-width:min(42vw,168px)!important;width:auto!important;height:auto!important;opacity:1!important;visibility:visible!important;object-fit:contain!important;background:transparent!important;mix-blend-mode:multiply}'
