@@ -170,14 +170,13 @@ if ( ! function_exists( 'rukn_bh_ui_css' ) ) {
 	function rukn_bh_ui_css() {
 		return '#ruknFab.fab-stack,.fab-stack{opacity:1!important;visibility:visible!important;transform:none!important}'
 			. '#ruknMob a.rukn-nav-link{display:block;padding:12px 0;font-family:Cairo,sans-serif;font-weight:700;color:#fff}'
-			. 'header#hdr,header#hdr .wrap.nav{left:0!important;right:0!important;inset-inline:0!important;width:100%!important;max-width:none!important;flex-wrap:nowrap!important}'
-			. 'header#hdr{background:transparent!important}'
-			. 'header#hdr::before{content:none!important;display:none!important;opacity:0!important;visibility:hidden!important;background:transparent!important;transform:translateY(-100%)!important}'
-			. 'header#hdr .logo img{display:none!important}'
-			. 'header#hdr .logo .mark{display:grid!important}'
-			. 'header#hdr .logo b{color:#fff;font-family:Cairo,sans-serif;font-weight:900;font-size:18px;white-space:nowrap}'
+			. 'html,body{background:#0A1F4E}'
+			. 'header,header#hdr,header.fixedintro{left:0!important;right:0!important;inset-inline:0!important;width:100%!important;max-width:none!important;flex-wrap:nowrap!important;background:transparent!important}'
+			. 'header:before,header::before,header#hdr:before,header#hdr::before,header.fixedintro:before,header.fixedintro::before{content:none!important;display:none!important;opacity:0!important;visibility:hidden!important;background:transparent!important;width:0!important;height:0!important}'
+			. 'header#hdr .logo .mark,header#hdr .logo b{display:none!important}'
+			. 'header#hdr .logo img{display:block!important;max-height:52px!important;max-width:min(58vw,220px)!important;width:auto!important;height:auto!important;opacity:1!important;visibility:visible!important;object-fit:contain!important;background:transparent!important;mix-blend-mode:multiply}'
 			. 'header#hdr.scrolled{background:rgba(255,255,255,.78)!important}'
-			. 'header#hdr.scrolled .logo b{color:var(--navy,#0A1F4E)}'
+			. 'header#hdr.scrolled .logo img{mix-blend-mode:darken}'
 			. '@media(max-width:768px){header#hdr nav.menu,header#hdr nav.menu a{display:none!important;visibility:hidden!important}header#hdr .nav-cta .btn{display:none!important}}';
 	}
 }
@@ -308,23 +307,26 @@ if ( ! function_exists( 'rukn_bh_apply_markup_fixes' ) ) {
 			$html
 		);
 		$html = str_replace(
-			'20260417_163942_٠٠٠١-90x23.webp',
-			'20260417_163942_٠٠٠١.webp',
+			array(
+				'https://rukn-eltatawer.com/bh/wp-content/uploads/2026/08/20260417_163942_٠٠٠١-90x23.webp',
+				'https://rukn-eltatawer.com/bh/wp-content/uploads/2026/08/20260417_163942_٠٠٠١.webp',
+				'https://www.rukn-eltatawer.com/bh/wp-content/uploads/2026/08/20260417_163942_٠٠٠١-90x23.webp',
+				'https://www.rukn-eltatawer.com/bh/wp-content/uploads/2026/08/20260417_163942_٠٠٠١.webp',
+				'<b>ركن التطور</b>',
+			),
+			array(
+				'https://rukn-eltatawer.com/bh/wp-content/uploads/2026/09/rukn-logo-transparent.webp',
+				'https://rukn-eltatawer.com/bh/wp-content/uploads/2026/09/rukn-logo-transparent.webp',
+				'https://rukn-eltatawer.com/bh/wp-content/uploads/2026/09/rukn-logo-transparent.webp',
+				'https://rukn-eltatawer.com/bh/wp-content/uploads/2026/09/rukn-logo-transparent.webp',
+				'',
+			),
 			$html
 		);
 
 		$html = str_replace( '<header id="hdr">', '<header id="hdr" class="fixedintro">', $html );
 		if ( strpos( $html, 'id="hdr"' ) !== false && strpos( $html, 'fixedintro' ) === false ) {
 			$html = str_replace( '<header id="hdr" class="', '<header id="hdr" class="fixedintro ', $html );
-		}
-
-		if ( strpos( $html, 'class="logo"' ) !== false && strpos( $html, '<b>ركن التطور</b>' ) === false ) {
-			$html = preg_replace(
-				'#(<a href="[^"]*" class="logo"[^>]*>)([\s\S]*?)(</a>)#',
-				'$1$2<b>ركن التطور</b>$3',
-				$html,
-				1
-			);
 		}
 
 		return $html;
