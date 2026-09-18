@@ -174,10 +174,11 @@ if ( ! function_exists( 'rukn_bh_ui_css' ) ) {
 			. 'header#hdr,header#hdr .wrap.nav{left:0!important;right:0!important;inset-inline:0!important;width:100%!important;max-width:none!important;flex-wrap:nowrap!important}'
 			. 'header#hdr{background:transparent!important}'
 			. 'header#hdr::before{content:none!important;display:none!important;opacity:0!important;visibility:hidden!important;background:transparent!important;transform:translateY(-100%)!important}'
-			. 'header#hdr .logo .mark{display:none!important}'
-			. 'header#hdr .logo img,.kayan-logo-img{display:block!important;max-height:42px!important;max-width:min(42vw,168px)!important;width:auto!important;height:auto!important;opacity:1!important;visibility:visible!important;object-fit:contain!important;background:transparent!important;mix-blend-mode:multiply}'
+			. 'header#hdr .logo img{display:none!important}'
+			. 'header#hdr .logo .mark{display:grid!important}'
+			. 'header#hdr .logo b{color:#fff;font-family:Cairo,sans-serif;font-weight:900;font-size:18px;white-space:nowrap}'
 			. 'header#hdr.scrolled{background:rgba(255,255,255,.78)!important}'
-			. 'header#hdr.scrolled .logo img{mix-blend-mode:darken}'
+			. 'header#hdr.scrolled .logo b{color:var(--navy,#0A1F4E)}'
 			. '@media(max-width:768px){header#hdr nav.menu{display:none!important}header#hdr .nav-cta .btn{display:none!important}}';
 	}
 }
@@ -316,6 +317,15 @@ if ( ! function_exists( 'rukn_bh_apply_markup_fixes' ) ) {
 		$html = str_replace( '<header id="hdr">', '<header id="hdr" class="fixedintro">', $html );
 		if ( strpos( $html, 'id="hdr"' ) !== false && strpos( $html, 'fixedintro' ) === false ) {
 			$html = str_replace( '<header id="hdr" class="', '<header id="hdr" class="fixedintro ', $html );
+		}
+
+		if ( strpos( $html, 'class="logo"' ) !== false && strpos( $html, '<b>ركن التطور</b>' ) === false ) {
+			$html = preg_replace(
+				'#(<a href="[^"]*" class="logo"[^>]*>)([\s\S]*?)(</a>)#',
+				'$1$2<b>ركن التطور</b>$3',
+				$html,
+				1
+			);
 		}
 
 		return $html;
