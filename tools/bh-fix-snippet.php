@@ -174,9 +174,9 @@ if ( ! function_exists( 'rukn_bh_ui_css' ) ) {
 			. 'header,header#hdr,header.fixedintro{left:0!important;right:0!important;inset-inline:0!important;width:100%!important;max-width:none!important;flex-wrap:nowrap!important;background:transparent!important}'
 			. 'header:before,header::before,header#hdr:before,header#hdr::before,header.fixedintro:before,header.fixedintro::before{content:none!important;display:none!important;opacity:0!important;visibility:hidden!important;background:transparent!important;width:0!important;height:0!important}'
 			. 'header#hdr .logo .mark,header#hdr .logo b{display:none!important}'
-			. 'header#hdr .logo img{display:block!important;max-height:52px!important;max-width:min(58vw,220px)!important;width:auto!important;height:auto!important;opacity:1!important;visibility:visible!important;object-fit:contain!important;background:transparent!important;mix-blend-mode:multiply}'
+			. 'header#hdr .logo img{display:block!important;max-height:52px!important;max-width:min(58vw,220px)!important;width:auto!important;height:auto!important;opacity:1!important;visibility:visible!important;object-fit:contain!important;background:transparent!important;margin-inline:8px}'
 			. 'header#hdr.scrolled{background:rgba(255,255,255,.78)!important}'
-			. 'header#hdr.scrolled .logo img{mix-blend-mode:darken}'
+			. 'header#hdr.scrolled .logo img{mix-blend-mode:normal}'
 			. '@media(max-width:768px){header#hdr nav.menu,header#hdr nav.menu a{display:none!important;visibility:hidden!important}header#hdr .nav-cta .btn{display:none!important}}';
 	}
 }
