@@ -277,7 +277,7 @@ if ( ! function_exists( 'rukn_bh_apply_markup_fixes' ) ) {
 			$html = str_replace( '<nav class="menu"></nav>', '<nav class="menu">' . rukn_bh_menu_html() . '</nav>', $html );
 		}
 
-		if ( strpos( $html, 'id="ruknMob"' ) !== false && strpos( $html, 'class="rukn-nav-link"' ) === false ) {
+		if ( strpos( $html, 'id="ruknMob"' ) !== false && ! preg_match( '#id="ruknMob"[^>]*>[\s\S]*?class="rukn-nav-link"#', $html ) ) {
 			$html = preg_replace(
 				'#(<div class="mob" id="ruknMob">[\s\S]*?class="mob-search"[\s\S]*?</button>)#',
 				'$1' . rukn_bh_menu_html(),
@@ -289,6 +289,11 @@ if ( ! function_exists( 'rukn_bh_apply_markup_fixes' ) ) {
 		$html = preg_replace(
 			'#(<img\b[^>]*class="[^"]*YourColor--Theme--image[^"]*"[^>]*?)\sdata-loader-src="([^"]+)"#',
 			'$1 src="$2"',
+			$html
+		);
+		$html = str_replace(
+			'20260417_163942_٠٠٠١-90x23.webp',
+			'20260417_163942_٠٠٠١.webp',
 			$html
 		);
 
