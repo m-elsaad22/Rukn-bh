@@ -1,13 +1,12 @@
 <?php
 /**
- * Plugin Name: Rukn BH Live Fixes
- * Description: Bahrain localization, restore header/hero/FABs, UAE WhatsApp + call temporarily, robots.txt, CPT archive 404s, schema.
- * Version: 1.2.0
- * Author: ركن التطور
+ * Bahrain live fixes — Code Snippets id 5 / WPCode 3257 draft.
+ * Do not rewrite tel: inside <style> or <script>.
+ * Floating call + WhatsApp stay visible. UAE +971586634710 is temporary.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
-	exit;
+	return;
 }
 
 if ( ! defined( 'RUKN_BH_WA' ) ) {
