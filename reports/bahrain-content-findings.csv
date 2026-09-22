@@ -1,0 +1,39 @@
+severity,area,item,evidence,recommendation
+critical,identity,UAE WhatsApp in every post,REST search 971586634710 = 1648 posts + 8 pages; excerpts include the number,Replace with +973 when available; until then WhatsApp-only copy and remove tel: links
+critical,identity,Schema telephone is UAE on BH business,Home JSON-LD telephone +971586634710 with addressCountry BH,Update Rank Math / LocalBusiness fields with Bahrain NAP
+critical,identity,No Bahrain +973 anywhere,No +973 in sampled pages or REST content,Obtain and publish +973 on contact pages and schema
+critical,ia,Homepage is posts index not a landing page,settings show_on_front=posts page_on_front=0; home has no canonical/description/H1,Create a real Arabic homepage and set it as static front page
+critical,seo,Soft 404 to homepage,Unknown URLs /terms /faq /draft grass-wall-manama /wp-sitemap.xml return 200 homepage,Proper 404; 301 drafts to canonical articles
+critical,seo,HTML sitemap lists drafts and a 404,8 grass-wall + 8 artificial-grass-grdn still linked; /bh/services/ 404; ~400 posts missing,Rebuild or drop HTML sitemap; 301 the 16 drafts
+critical,seo,City archives in sitemap return HTTP 500,/city/manama and empty cities hidd/saar/jidhafs/tubli all 500,Fix archive after theme swap AND write city landing content
+critical,security,Plugin zip files in public uploads,rukn-bh-live-fixes.zip and rukn-bh-seo.zip in media library,Delete from media; never upload plugin zips to uploads
+high,pages,Thin core pages,blog 7w; EN contact 56w; privacy 72w; about-en 80w; services 90w; about 126w; contact 132w,Rewrite Bahrain-specific pages with real NAP form hours licenses
+high,pages,Cities page promises 12 cities articles cover 8,cities/contact copy lists Jidhafs Saar Tubli Hidd; taxonomy count 0 for those 4,Publish city articles or stop claiming coverage
+high,pages,Contact has no form despite privacy text,privacy mentions النموذج; contact has only tel/wa UAE; email m@rukn-eltatawer.com unused,Add inspection form; show email if monitored
+high,pages,English is not a language in Polylang,pll en language count=0; /bh/en/ 404; hreflang points there; flags sa/us,Either full Polylang EN or noindex/remove thin EN pages
+high,content,All 1648 posts share featured image 1587,featured_media counter {1587: 1648}; alt empty on attachment,Unique images per service at least; set media alt
+high,content,Inline KAYAN CSS stored in post_content,Samples start with .kayan-article .responsive-table,Strip CSS from all posts before theme migration
+high,content,Boilerplate excerpts and body,Same excerpt pattern; 206 title templates x 8 cities; prior audit 99% shared passages,Rewrite 30-40% unique local copy per city
+high,content,Empty CPTs,services/reviews/faqs/pricing/portfolio/before_after = 0,Fill or hide from IA/sitemaps after new theme
+high,seo,Title duplication on pages,من نحن — ركن التطور البحرين - ركن التطور - البحرين,Fix Rank Math title template vs page titles
+high,seo,Homepage hreflang to 404,/bh/en/ is 404,Point en hreflang at real EN hub or remove
+high,seo,Uncategorized in category sitemap,uncategorized + encoded EN uncategorized; default_category=1,noindex/delete empty cats; change default category
+medium,content,Category dump into general-maintenance,864/1648 posts,Rebalance taxonomy to match services
+medium,content,Truncated unused tags,تنظيف عميق للأرضيات والر ; كشف ظاهر على السقف أو ال,Delete or rename
+medium,content,Global tags on every post,البحرين and ركن التطور count 1648; all 232 tags have empty descriptions,Stop auto-tagging brand/country; prune
+medium,content,Misleading plumber slug,title سباك منازل slug home-plumber-elec-{city},Rename slugs with 301
+medium,content,Author archives indexed,admin and MAHMOUD ELSAȜD,Company byline + noindex authors
+medium,content,Media library too small,11 files including 2 zips; all alt empty,Build a real image bank; alt text
+medium,seo,/bh/ar/ redirects to random article,301 to artificial-grass-aali,301 /ar/ to homepage
+medium,seo,Homepage duplicated in post and page sitemaps,post-sitemap1 first loc is /bh/ plus page-sitemap,Keep homepage in one sitemap only
+medium,seo,www vs non-www split,siteurl without www; root robots mixes hosts,Pick one host and canonicalize
+medium,legal,Privacy too thin no PDPL,72 words; no terms (/terms/ soft 404),Write BH PDPL privacy + terms of service
+medium,legal,No CR / pest-control license in about,about 126 words no registration numbers,Publish licenses required in Bahrain
+medium,ia,Blog is not a blog,page_for_posts 7 words; all posts are service-city landings,Separate genuine guides or drop /blog/
+medium,ia,Menu English points to thin hub,menu item English -> home-services-bahrain (139 words),Improve EN hub or link to Arabic with language switcher
+low,content,service_categories taxonomy empty,REST count 0 while WP categories used,Use one service taxonomy after theme copy
+low,content,City term descriptions empty,12 city terms description len 0,Write city archive intros
+low,content,site_logo empty,settings site_logo None; icon 13922,Set site logo in WP identity for new theme
+low,seo,Rank Math getSettings 404 for this user,status namespace only,Verify Rank Math titles/canonicals in admin
+low,content,Comments closed empty,0 comments,Keep closed; do not advertise reviews CPT until filled
+low,content,All posts dated 4-5 Sep 2026,batch publish then bulk modified 17 Sep,Stagger updates when rewriting so dates look natural
