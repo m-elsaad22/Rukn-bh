@@ -1,0 +1,20 @@
+severity,area,item,evidence,why_header_breaks,recommendation
+critical,header,White overlay header::before,main.css: header:before{content:"";width:100%;height:100%;background:#fff}; mobile re-shows header.fixedintro::before,Yes — white bar on mobile screenshot 23 Sep,Delete overlay rules; do not re-enable on mobile MQ
+critical,header,Grouped selector header{left:0},main.css: .-YC-owl-navs-items>.-YC-owl-Slides-next,header{left:0},Yes — header sticks left at ~half width,Un-group header from Owl selector; set inset-inline:0;width:100%
+critical,header,Two CSS systems,YourColor main.css vs rukn-v3.css vs snippet #rukn-bh-ui; snippet prints in wp_head BEFORE theme <style>,Yes — patches lose to later theme CSS / body --bg,One header CSS file; load v3 last or drop main.css header rules
+high,header,flex-wrap wrap,old header{flex-wrap:wrap} wraps logo/nav into a second white row,Yes on narrow desktop,Keep nowrap only
+high,header,Leftover letter n,desktop+mobile screenshots top-right n over logo; EN switcher -> /bh/en/ 404,Yes — looks broken,Fix lang control overflow; point EN to real page
+high,header,Empty nav then JS inject,part.php manual wp_get_nav_menu_items; MenuField filters; snippet fills empty nav; mobile duplicates links,Partial,Use wp_nav_menu; stop double inject
+high,header,Logo webp white canvas,old 90x23 and full webp metadata; snippet swaps transparent file and hides .mark,Yes on some Android,Keep transparent asset; do not thumbnail the wordmark
+high,uae,city__widget default emirates + uae-svg,city__widget.php defaults Dubai Abu Dhabi Sharjah…; echo uae-svg SVG always,No,Bahrain cities or hide map; replace SVG
+high,uae,FAQ emirates,Faqs__simple2.php all seven emirates,No,Rewrite defaults for BH
+high,uae,Dummy Dubai Marina content,rukn_cases reviews works rukn_results kayan-seed slider_intro بلدية دبي,No,Replace seed copy
+high,uae,Finder/booking still say emirate,rukn_finder.php kayan-booking.js content-map.php,No,Rename field to city
+high,uae,Empty LocalBusiness schema,LocalBusiness.php YourColoe option empty + fake aggregateRating; live HTML still has empty JSON-LD plus snippet BH schema with +971,No,Single schema; fill or disable
+medium,uae,i18n fallback ae,/bh path vs ae path ''; snippet zeros bh.path,No,Default country bh when installed in /bh
+medium,uae,Egypt WA rewritten to KAYAN WEB,snippet replaces wa.me/201151481000,No,Remove developer number from theme/options
+medium,theme,No WP 404/single/page,Locate() die(); CPT archives patched to 404 by snippet,No,Real templates after UAE theme copy
+medium,theme,Rank Math disabled then KAYAN schema,kayan-seo/compatibility.php,No,One SEO owner
+medium,theme,Unescaped menu URLs,echo item->url in header part.php,No,esc_url esc_html
+low,theme,Typos,passowrd forms.css; YourColoe schema,No,Rename carefully with migrations
+low,header,Transparent header over light body,v3 body background #F4F8FD; snippet navy body overridden,Contributes to white gap,Give header its own bg on inner pages; keep hero underlap intentional
