@@ -27,3 +27,17 @@ python3 tools/apply_call_designs.py
 الكود: `tools/bh-fix-snippet.php` + `tools/pages/*.html`.
 
 لا يُغيَّر `show_on_front=posts` لأن رئيسية KAYAN تعتمد ودجات `@index`.
+
+## تحقق حي (23 سبتمبر 2026)
+
+| رابط | النتيجة |
+|---|---|
+| `/city/manama/` و `/city/hidd/` | 200 بدل 500، صفحة مدينة بشكل التصميم |
+| مسار غير موجود | **404** بشكل Call-main بدل التحويل الصامت للرئيسية |
+| `/en/` | 301 → `/home-services-bahrain/` |
+| `/ar/` | 301 → الرئيسية |
+| `/grass-wall-manama/` | 301 → `/wall-grass-manama/` |
+| `/terms/` و `/faq/` | صفحتان جديدتان |
+| واتساب/اتصال عائم | ظاهران، الرقم `+971586634710` مؤقت |
+
+القالب ما زال مقفولاً؛ إصلاح الشريط الأبيض على الموبايل يتم عبر CSS+JS في المقتطف لأن `main.css` يعيد إظهار `header::before`.

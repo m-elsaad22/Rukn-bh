@@ -194,6 +194,17 @@ add_action(
 	}
 );
 
+add_filter(
+	'ez_toc_maybe_apply_the_content_filter',
+	static function ( $run ) {
+		$post = get_post();
+		if ( $post && is_string( $post->post_content ) && strpos( $post->post_content, 'rukn-shape' ) !== false ) {
+			return false;
+		}
+		return $run;
+	}
+);
+
 if ( ! function_exists( 'rukn_bh_menu_links' ) ) {
 	function rukn_bh_menu_links() {
 		$home = RUKN_BH_HOME;
@@ -224,15 +235,23 @@ if ( ! function_exists( 'rukn_bh_ui_css' ) ) {
 		return '#ruknFab.fab-stack,.fab-stack{opacity:1!important;visibility:visible!important;transform:none!important;pointer-events:auto!important}'
 			. '#ruknFab.fab-stack.show,.fab-stack.show{display:flex!important}'
 			. '#ruknMob a.rukn-nav-link{display:block;padding:12px 0;font-family:Cairo,sans-serif;font-weight:700;color:#fff}'
-			. 'header,header#hdr,header.fixedintro{position:fixed!important;top:0!important;left:0!important;right:0!important;inset-inline:0!important;width:100%!important;max-width:none!important;height:80px!important;display:flex!important;align-items:center!important;z-index:1000!important;overflow:visible!important;flex-wrap:nowrap!important;background:transparent!important;transform:none!important}'
+			. 'header,header#hdr,header.fixedintro{position:fixed!important;top:0!important;left:0!important;right:0!important;inset-inline:0!important;width:100vw!important;max-width:100vw!important;min-width:100%!important;height:80px!important;display:flex!important;align-items:center!important;z-index:1000!important;overflow:visible!important;flex-wrap:nowrap!important;background:transparent!important;transform:none!important;margin:0!important}'
+			. 'header .wrap,header#hdr .wrap.nav,header.fixedintro .wrap{width:100%!important;max-width:1400px!important;margin:0 auto!important}'
 			. 'header:before,header::before,header#hdr:before,header#hdr::before,header.fixedintro:before,header.fixedintro::before{content:none!important;display:none!important;opacity:0!important;visibility:hidden!important;background:transparent!important;width:0!important;height:0!important;pointer-events:none!important}'
+			. '@media(max-width:768px){header,header#hdr,header.fixedintro{width:100vw!important;left:0!important;right:0!important;inset-inline:0!important}header:before,header::before,header#hdr::before,header.fixedintro::before{content:none!important;display:none!important}}'
 			. 'header#hdr .logo .mark,header#hdr .logo b,header#hdr .kayan-logo-fallback{display:none!important}'
 			. 'header#hdr .logo img{display:block!important;max-height:52px!important;max-width:min(58vw,220px)!important;width:auto!important;height:auto!important;opacity:1!important;visibility:visible!important;object-fit:contain!important;background:transparent!important;margin-inline:8px;mix-blend-mode:normal}'
 			. 'header#hdr.scrolled{background:rgba(255,255,255,.78)!important;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}'
 			. 'header#hdr.scrolled .logo img{mix-blend-mode:normal}'
 			. '.rukn-lc-langico{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;overflow:hidden;font-size:11px;font-weight:800;font-family:Cairo,sans-serif;line-height:1}'
-			. '.rukn-lc-langico.en{letter-spacing:0;text-indent:0}'
+			. '.rukn-lc-langico.en{letter-spacing:-0.5px;font-size:10px;width:28px;height:28px}'
+			. '.kayan-header-lang:not(.open) .rukn-lc-menu{display:none!important;visibility:hidden!important;pointer-events:none!important}'
+			. 'html,body{overflow-x:hidden}'
 			. '.uae-svg,svg.uae-svg,.area-map .uae-svg{display:none!important}'
+			. '.rukn-shape #ez-toc-container,.rukn-shape .ez-toc-container,.rukn-shape .ez-toc-title-container{display:none!important}'
+			. 'body:has(.rukn-shape) .article-layout{display:block!important;grid-template-columns:1fr!important}'
+			. 'body:has(.rukn-shape) .article-body{max-width:1400px;margin:0 auto;background:transparent!important;border:none!important;box-shadow:none!important;padding:20px 0 60px!important}'
+			. '#ez-toc-container{display:none!important}'
 			. '@media(max-width:768px){header#hdr nav.menu,header#hdr nav.menu a{display:none!important;visibility:hidden!important}header#hdr .nav-cta .btn{display:none!important}}';
 	}
 }
@@ -669,7 +688,7 @@ add_action(
 	static function () {
 		echo '<style id="rukn-bh-ui-footer">' . rukn_bh_ui_css() . '</style>';
 		$wa = esc_js( RUKN_BH_WA );
-		echo '<script id="rukn-bh-ui-js">(function(){var h=document.getElementById("hdr");if(h){var on=function(){h.classList.toggle("scrolled", window.scrollY>12);};on();window.addEventListener("scroll",on,{passive:true});}document.querySelectorAll(".rukn-shape .faq-q").forEach(function(q){q.addEventListener("click",function(){var it=q.closest(".faq-item");if(it)it.classList.toggle("open");});});document.querySelectorAll("form.rukn-wa-form").forEach(function(f){f.addEventListener("submit",function(e){e.preventDefault();var fd=new FormData(f);var parts=[];fd.forEach(function(v,k){if(v)parts.push(k+": "+v);});var url="https://wa.me/' . $wa . '?text="+encodeURIComponent("طلب من موقع ركن التطور البحرين\\n"+parts.join("\\n"));window.open(url,"_blank");});});})();</script>';
+		echo '<script id="rukn-bh-ui-js">(function(){var s=document.createElement("style");s.id="rukn-bh-header-kill";s.textContent="header#hdr,header.fixedintro,header{width:100vw!important;max-width:100vw!important;left:0!important;right:0!important;inset-inline:0!important;background:transparent!important}header::before,header#hdr::before,header.fixedintro::before{content:none!important;display:none!important;opacity:0!important;background:transparent!important;width:0!important;height:0!important}";document.documentElement.appendChild(s);var h=document.getElementById("hdr");if(h){h.style.setProperty("width","100vw","important");h.style.setProperty("max-width","100vw","important");h.style.setProperty("left","0","important");h.style.setProperty("right","0","important");h.style.setProperty("inset-inline","0","important");h.style.setProperty("background","transparent","important");var on=function(){if(window.scrollY>12){h.classList.add("scrolled");h.style.setProperty("background","rgba(255,255,255,.78)","important");}else{h.classList.remove("scrolled");h.style.setProperty("background","transparent","important");}};on();window.addEventListener("scroll",on,{passive:true});}document.querySelectorAll(".rukn-shape .faq-q").forEach(function(q){q.addEventListener("click",function(){var it=q.closest(".faq-item");if(it)it.classList.toggle("open");});});document.querySelectorAll("form.rukn-wa-form").forEach(function(f){f.addEventListener("submit",function(e){e.preventDefault();var fd=new FormData(f);var parts=[];fd.forEach(function(v,k){if(v)parts.push(k+": "+v);});var url="https://wa.me/' . $wa . '?text="+encodeURIComponent("طلب من موقع ركن التطور البحرين\\n"+parts.join("\\n"));window.open(url,"_blank");});});})();</script>';
 	},
 	9999
 );
