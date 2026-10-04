@@ -1030,7 +1030,7 @@ def build_payload(title: str, slug: str) -> dict:
 
     refuse = fill(pack["extra"], city)
     mid = [
-        f"<h2>ما هي {pack['verb']} في {city}؟</h2><p>{fill(pack['what'], city)} {log['route']}</p>",
+        f"<h2>ماذا تعني {pack['verb']} داخل {city}؟</h2><p>{fill(pack['what'], city)} {log['route']}</p>",
         *section_html,
         f"<h2>علامات وحدود النطاق في {city}</h2>{table(['العنصر','المعنى','في الموقع'], signs)}",
         warn(refuse),
