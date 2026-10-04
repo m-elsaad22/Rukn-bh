@@ -886,7 +886,7 @@ def city_hook_html(city: str, verb: str, fam: str, n: int) -> str:
         f"<p>{info['housing']} لذلك عدة {verb} في {city} تُختار بعد وصف المدخل لا بعد نسخ صفحة مدينة أخرى. {info['access']}</p>"
         f"<p>{info['climate']} {info['season']}</p>"
         f"<p>في {a0}: {n0} في {a1}: {n1} أما {a2}: {n2}</p>"
-        f"<p>{info['risk']} {info['note']} هذا يخص {verb} داخل {city} — عائلة {fam}.</p>"
+        f"<p>{info['risk']} {info['note']} هذا يخص {verb} داخل {city} ولا يُنسخ لمدينة أخرى.</p>"
         f"<p>{log['pick']} {log['watch']} {log['route']}</p>"
     ]
     for title, body in rot:
