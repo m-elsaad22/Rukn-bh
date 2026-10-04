@@ -939,8 +939,15 @@ PACKS["wallpaper-installation"]["intros"][0] = (
 
 
 def family_of(slug: str) -> str | None:
+    fam = slug or ""
+    for sl in sorted(CITY_SLUG.values(), key=len, reverse=True):
+        if fam.endswith("-" + sl):
+            fam = fam[: -(len(sl) + 1)]
+            break
+    if fam in PREFIXES:
+        return fam
     for p in PREFIXES:
-        if slug == p or slug.startswith(p + "-"):
+        if fam == p:
             return p
     return None
 
@@ -966,6 +973,11 @@ def fill(text: str, city: str) -> str:
         .replace("{watch}", log["watch"])
         .replace("{kind}", info["kind"])
         .replace("{housing}", info["housing"])
+        .replace("{climate}", info["climate"])
+        .replace("{access}", info["access"])
+        .replace("{note}", info["note"])
+        .replace("{season}", info["season"])
+        .replace("{risk}", info["risk"])
     )
 
 
