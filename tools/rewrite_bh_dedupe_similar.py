@@ -42,6 +42,7 @@ ONLY = [
     "furniture-packaging",
     "kitchen-renovation",
     "decor-design",
+    "gypsum-board-decor",
 ]
 
 _p = fx._p
@@ -659,6 +660,38 @@ fx.PACKS["kitchen-renovation"] = _p(
     extra="ترميم مطبخ، لا تنظيف منزل.",
 )
 
+fx.PACKS["gypsum-board-decor"] = _p(
+    icon="fa-border-all",
+    verb="ديكورات جبس بورد",
+    what="ديكور الجبس هنا شكل: كرانيش، جدار تلفزيون، سقف بإنارة مخفية. غير تركيب جدار فاصل أو سقف إنشائي كامل.",
+    intros=[
+        "جدار تلفزيون أو سقف مزخرف في {city} يبدأ بالمساحة والإضاءة لا بنسخ صورة أكبر من الغرفة.",
+        "في {housing} الارتفاع يحدّد الكرنيش والطبقة الثانية. {pick}",
+        "الرطوبة تفسد الزخرفة. {climate} إن بكت الزاوية نوقف الديكور.",
+    ],
+    sections=[
+        ("ديكور لا جدار فاصل", "هذه الصفحة للشكل والإضاءة. الفاصل الإنشائي مسار تركيب جبس آخر."),
+        ("الإنارة المخفية", "النقاط تُحدَّد قبل الإغلاق. التعديل بعد المعجون أغلى."),
+        ("الرطوبة في {city}", "{climate} الحمّام يحتاج نوعاً مناسباً أو نرفض الزخرفة العادية."),
+        ("النقل والقياس", "{access} {note}"),
+    ],
+    features=[("قياس الغرفة", ""), ("مخطط إنارة", ""), ("طبقة ديكور", ""), ("معجون ناعم", "")],
+    steps=[("صور الغرفة", "ولون الجدار."), ("اقتراح شكل", ""), ("تنفيذ في {city}", ""), ("معجون وتسليم", "")],
+    services=["سقف ديكوري", "جدار تلفزيون", "كرانيش", "إنارة مخفية", "إصلاح زاوية"],
+    prices=[("المساحة والارتفاع", ""), ("تفصيل الشكل", ""), ("إنارة", ""), ("تشطيب", "")],
+    faqs=[
+        ("هل هو جدار فاصل؟", "لا. ذلك مسار تركيب جبس بورد."),
+        ("{hub}؟", "نعم. {pick}"),
+        ("حمّام؟", "بنوع مقاوم أو نعتذر عن الزخرفة العادية."),
+        ("3D؟", "إن اتُفق. ليس لكل جدار."),
+        ("كم يوم لصالة؟", "بعد المقاس والتفاصيل."),
+        ("دهان؟", "بند منفصل غالباً."),
+        ("فك قديم؟", "بند."),
+        ("واتساب؟", "صور الغرفة نهاراً وليلاً."),
+    ],
+    extra="ديكور جبس، لا حدادة ولا دهان فيلا كاملة.",
+)
+
 fx.PACKS["electrical-maintenance"] = _p(
     icon="fa-plug-circle-bolt",
     verb="صيانة كهرباء",
@@ -882,6 +915,24 @@ def update_one(post: dict, by_svc, by_city, by_fam, meta) -> tuple:
     tgt = target_cat(rec["svc"])
     new_cat = tgt if cur == 14 and tgt != 14 else cur
     html = inject(built["html"], graph_html(rec, cities, related, new_cat, n))
+    vis = visible_text(html)
+    words = word_list(html)
+    dens = vis.count(built["full"]) / max(len(words), 1)
+    pads = [
+        f"<p>{built['full']} تُشرح بالصور قبل أي رقم.</p>",
+        f"<p>عنوانك في {built['city']} جزء من {built['full']}.</p>",
+        f"<p>نطاق {built['full']} مكتوب بعد التفاصيل.</p>",
+    ]
+    j = 0
+    while dens < 0.0072 and j < len(pads):
+        nxt = (vis.count(built["full"]) + 1) / max(len(words) + 12, 1)
+        if nxt > 0.0102:
+            break
+        html = html.replace("</article>", pads[j] + "</article>", 1)
+        vis = visible_text(html)
+        words = word_list(html)
+        dens = vis.count(built["full"]) / max(len(words), 1)
+        j += 1
     tag_ids = [i for i in (fx.ensure_tag(t) for t in built["tags"]) if i]
     payload = {"content": html, "excerpt": built["excerpt"], "title": built["title"]}
     if tag_ids:
@@ -964,6 +1015,8 @@ def sample_report() -> None:
         ("شركة كشف تسربات الغاز في الرفاع", "gas-leak-detection-riffa"),
         ("شركة مكافحة بق الفراش في سترة", "bed-bug-control-sitra"),
         ("شركة تنظيف مسابح في عالي", "pool-cleaning-aali"),
+        ("شركة ديكورات جبس بورد في المنامة", "gypsum-board-decor-manama"),
+        ("شركة تركيب جبس بورد في المنامة", "gypsum-board-manama"),
     ]
     print("=== dedupe samples ===")
     leads, h2s = [], []
@@ -1043,6 +1096,9 @@ def main() -> int:
         if rec["city"]:
             bc[rec["city"]].append(rec)
     posts = targets_from(all_posts)
+    if "--family" in sys.argv:
+        want = set(sys.argv[sys.argv.index("--family") + 1].split(","))
+        posts = [p for p in posts if fx.family_of(p.get("slug") or "") in want]
     if "--limit" in sys.argv:
         posts = posts[: int(sys.argv[sys.argv.index("--limit") + 1])]
     print("targets", len(posts), flush=True)
