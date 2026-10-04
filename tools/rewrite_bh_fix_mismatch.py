@@ -966,6 +966,11 @@ def fill(text: str, city: str) -> str:
         .replace("{watch}", log["watch"])
         .replace("{kind}", info["kind"])
         .replace("{housing}", info["housing"])
+        .replace("{climate}", info["climate"])
+        .replace("{access}", info["access"])
+        .replace("{note}", info["note"])
+        .replace("{season}", info["season"])
+        .replace("{risk}", info["risk"])
     )
 
 
