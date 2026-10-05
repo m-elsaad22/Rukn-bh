@@ -165,7 +165,8 @@ def run(cmd: str, write: bool = True, timeout: int = 90) -> dict:
 
 
 def option_update(key: str, value: str) -> dict:
-    cmd = f"option update {key} --format=json {json.dumps(value, ensure_ascii=False)}"
+    # WPVibe strips one quote layer before JSON-decoding; wrap twice so HTML stays a string.
+    cmd = f"option update {key} --format=json {json.dumps(json.dumps(value, ensure_ascii=False))}"
     return run(cmd, write=True, timeout=120)
 
 
