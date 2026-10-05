@@ -50,6 +50,8 @@ HEADER_CODES = r"""<style id="rukn-bh-ui">#ruknFab.fab-stack,.fab-stack{opacity:
   ['تغطية 12 مدينة','صفحات تفصيلية لـ 8 مدن'],
   ['نطاق التغطية 12 مدن','8 مدن بصفحات تفصيلية'],
   ['12 مدن منطقة','8 مدن بصفحات'],
+  ['12 مدينة','8 مدن بصفحات'],
+  ['12 مدن','8 مدن بصفحات'],
   ['من أول اتصال حتى إغلاق المشكلة','من أول واتساب حتى إغلاق المشكلة'],
   ['تواصل وتشخيصاتصال أو واتساب','تواصل وتشخيص عبر واتساب'],
   ['اتصال أو واتساب على مدار الأسبوع','واتساب على مدار الأسبوع'],
@@ -150,9 +152,11 @@ HEADER_CODES = r"""<style id="rukn-bh-ui">#ruknFab.fab-stack,.fab-stack{opacity:
   retargetTel();
   ensureFabs();
  }
+ function later(){replaceText();fillCounts();}
  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',fix);}else{fix();}
- setTimeout(fillCounts,400);
- setTimeout(fillCounts,1400);
+ setTimeout(later,400);
+ setTimeout(later,1400);
+ document.addEventListener('click',function(){setTimeout(later,50);},true);
 })();
 </script>
 """
