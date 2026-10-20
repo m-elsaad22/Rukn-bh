@@ -1,0 +1,6 @@
+reason,count,source,live_match,action
+duplicate_no_user_canonical,17,crawled,"city archives missing rel=canonical; city pagination duplicates",add self canonical; 301 city /page/2/ to city URL
+server_error_5xx,1,site,"historical /city/* HTTP 500; verification already started in GSC",keep city interceptor; 301 empty cities
+discovered_not_indexed,134,google,"sitemap URLs waiting for crawl budget after junk URLs",noindex/remove junk from Rank Math sitemap
+duplicate_google_chose_canonical,73,google,"near-duplicate service x city articles with self canonical",keep local canonicals; uniqueness is a content task
+crawled_not_indexed,24,google,"html-sitemap, uncategorized, empty EN category, thin EN pages",noindex html-sitemap and junk taxonomies
