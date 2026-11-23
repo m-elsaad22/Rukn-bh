@@ -34,22 +34,28 @@ def patch_contact() -> None:
 
 
 def digit_ids() -> list[int]:
-    sql = (
-        "SELECT ID FROM 2GGpPu6Sy_posts WHERE post_status='publish' AND post_type='post' "
-        f"AND post_content LIKE '%{VISIBLE}%' ORDER BY ID"
-    )
-    out = cli(f'db query "{sql}" --limit=2000', write=False, timeout=90)
-    raw = out.get("stdout") or ""
-    try:
-        data = json.loads(raw)
-        rows = data.get("results") or data
-    except json.JSONDecodeError:
-        print("id parse", raw[:300])
-        return []
-    ids = []
-    for row in rows if isinstance(rows, list) else []:
-        if isinstance(row, dict) and row.get("ID"):
-            ids.append(int(row["ID"]))
+    ids: list[int] = []
+    last = 0
+    while True:
+        sql = (
+            "SELECT ID FROM 2GGpPu6Sy_posts WHERE post_status='publish' AND post_type='post' "
+            f"AND post_content LIKE '%{VISIBLE}%' AND ID>{last} ORDER BY ID"
+        )
+        out = cli(f'db query "{sql}" --limit=400', write=False, timeout=90)
+        raw = out.get("stdout") or ""
+        try:
+            data = json.loads(raw)
+            rows = data.get("results") or []
+        except json.JSONDecodeError:
+            print("id parse", raw[:300])
+            break
+        batch = [int(row["ID"]) for row in rows if isinstance(row, dict) and row.get("ID")]
+        if not batch:
+            break
+        ids.extend(batch)
+        last = batch[-1]
+        if len(batch) < 400:
+            break
     print("digit ids", len(ids), flush=True)
     return ids
 
