@@ -82,14 +82,19 @@ if ( ! function_exists( 'rukn_bh_chrome_html' ) ) {
 		);
 
 		$html = preg_replace(
-			'/<a\b([^>]*?)href=["\']tel:[^"\']+["\']([^>]*)>/i',
-			'<a$1href="https://wa.me/' . $wa . '" data-rukn-wa="1"$2>',
+			'#<a\b[^>]*href=["\']tel:[^"\']+["\'][^>]*>.*?</a>#is',
+			'',
 			$html
 		);
+		$html = preg_replace( '/واتساب\s*971586634710/', 'واتساب', $html );
+		$html = str_replace( '+971 58 663 4710 (مؤقت)', 'زر واتساب', $html );
+		$html = preg_replace( '/>([^<]*)\+971586634710([^<]*)</', '>$1واتساب$2<', $html );
+		$html = preg_replace( '/,"telephone":"\+971586634710"/', '', $html );
+		$html = preg_replace( '/"telephone":"\+971586634710",/', '', $html );
 
 		if ( strpos( $html, 'id="rukn-bh-chrome-css"' ) === false ) {
 			$css = '<style id="rukn-bh-chrome-css">'
-				. '.fab-call,.btn-call,a[href^="tel:"],.kayan-customer-ratings,.--rating--widgets--box,.--YC-single-rating-box--{display:none!important}'
+				. '.fab-call,.btn-call,a[href^="tel:"],.fcontact a[href^="tel:"],a.btn-ghost[href^="tel:"],.kayan-customer-ratings,.--rating--widgets--box,.--YC-single-rating-box--{display:none!important}'
 				. 'body.rukn-hide-call .fab-call,body.rukn-wa-only .fab-call{display:none!important}'
 				. '</style>';
 			if ( strpos( $html, '</head>' ) !== false ) {

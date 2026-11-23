@@ -1069,7 +1069,7 @@ def build_payload(title: str, slug: str) -> dict:
         ["features", "steps", "body", "services", "call", "prices"],
     ])
 
-    excerpt = f"{full}: {fill(pack['what'], city)[:120]} واتساب {WA}."
+    excerpt = f"{full}: {fill(pack['what'], city)[:120]} تواصل واتساب."
     parts = [
         style_block(),
         '<article class="kayan-article">',
