@@ -35,7 +35,7 @@ REPLACES = [
 ]
 
 HEADER_CODES = r"""<style id="rukn-bh-ui">#ruknFab.fab-stack,.fab-stack{opacity:1!important;visibility:visible!important;transform:none!important}#ruknMob a.rukn-nav-link{display:block;padding:12px 0;font-family:Cairo,sans-serif;font-weight:700;color:#fff}html,body{background:#0A1F4E}header,header#hdr,header.fixedintro{left:0!important;right:0!important;inset-inline:0!important;width:100%!important;max-width:none!important;flex-wrap:nowrap!important;background:transparent!important}header:before,header::before,header#hdr:before,header#hdr::before,header.fixedintro:before,header.fixedintro::before{content:none!important;display:none!important;opacity:0!important;visibility:hidden!important;background:transparent!important;width:0!important;height:0!important}header#hdr .logo .mark,header#hdr .logo b{display:none!important}header#hdr .logo img{display:block!important;max-height:52px!important;max-width:min(58vw,220px)!important;width:auto!important;height:auto!important;opacity:1!important;visibility:visible!important;object-fit:contain!important;background:transparent!important;margin-inline:8px}header#hdr.scrolled{background:rgba(255,255,255,.78)!important}header#hdr.scrolled .logo img{mix-blend-mode:normal}@media(max-width:768px){header#hdr nav.menu,header#hdr nav.menu a{display:none!important;visibility:hidden!important}header#hdr .nav-cta .btn{display:none!important}}</style>
-<style id="rukn-bh-chrome-css">.fab-call,.btn-call,a[href^="tel:"],.kayan-customer-ratings,.--rating--widgets--box,.--YC-single-rating-box--{display:none!important}body.rukn-hide-call .fab-call,body.rukn-wa-only .fab-call,html.rukn-wa-only .fab-call{display:none!important}</style>
+<style id="rukn-bh-chrome-css">.fab-call,.btn-call,a[href^="tel:"],.fcontact a[href^="tel:"],a.btn-ghost[href^="tel:"],.kayan-customer-ratings,.--rating--widgets--box,.--YC-single-rating-box--{display:none!important}body.rukn-hide-call .fab-call,body.rukn-wa-only .fab-call,html.rukn-wa-only .fab-call{display:none!important}</style>
 <script>
 (function(){
  var WA='971586634710';
@@ -120,11 +120,41 @@ HEADER_CODES = r"""<style id="rukn-bh-ui">#ruknFab.fab-stack,.fab-stack{opacity:
    }
   }
  }
- function retargetTel(){
-  var as=document.querySelectorAll('a[href^="tel:"]');
-  for(var i=0;i<as.length;i++){
-   as[i].href='https://wa.me/'+WA;
-   as[i].setAttribute('data-rukn-wa','1');
+ function stripSchemaTel(){
+  var scripts=document.querySelectorAll('script[type="application/ld+json"]');
+  for(var i=0;i<scripts.length;i++){
+   var t=scripts[i].textContent||'';
+   if(t.indexOf('971586634710')===-1)continue;
+   t=t.replace(/,"telephone":"\+971586634710"/g,'').replace(/"telephone":"\+971586634710",/g,'');
+   t=t.replace(/واتساب 971586634710/g,'واتساب');
+   scripts[i].textContent=t;
+  }
+ }
+ function hideVisibleUaeDigits(){
+  if(!document.body)return;
+  var re=/\+?\s*971[\s\-]*58[\s\-]*663[\s\-]*4710/g;
+  var skip={SCRIPT:1,STYLE:1,NOSCRIPT:1,TEXTAREA:1};
+  var walk=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT,null);
+  var n;
+  while(n=walk.nextNode()){
+   var p=n.parentElement;
+   if(!p||skip[p.tagName])continue;
+   var v=n.nodeValue;
+   if(!v||v.indexOf('971')===-1)continue;
+   v=v.replace(re,'');
+   v=v.replace(/\s*—\s*\(مؤقت\)/g,'').replace(/\(مؤقت\)/g,'');
+   v=v.replace(/\s{2,}/g,' ').replace(/\s+([.،,)])/g,'$1');
+   n.nodeValue=v;
+  }
+ }
+ function hidePhoneChrome(){
+  if(window.RuknCS){window.RuknCS.call_show=false;window.RuknCS.call_number='';}
+  var nodes=document.querySelectorAll('a.fab-call,a.btn-call,a[href^="tel:"]');
+  for(var i=0;i<nodes.length;i++){
+   var a=nodes[i];
+   var href=a.getAttribute('href')||'';
+   if(href.indexOf('wa.me')!==-1)continue;
+   a.remove();
   }
  }
  function fix(){
@@ -149,13 +179,16 @@ HEADER_CODES = r"""<style id="rukn-bh-ui">#ruknFab.fab-stack,.fab-stack{opacity:
   replaceText();
   fillCounts();
   stripEmptyRating();
-  retargetTel();
+  stripSchemaTel();
+  hideVisibleUaeDigits();
+  hidePhoneChrome();
   ensureFabs();
  }
- function later(){replaceText();fillCounts();}
+ function later(){replaceText();fillCounts();stripSchemaTel();hideVisibleUaeDigits();hidePhoneChrome();ensureFabs();}
  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',fix);}else{fix();}
  setTimeout(later,400);
  setTimeout(later,1400);
+ setTimeout(later,3200);
  document.addEventListener('click',function(){setTimeout(later,50);},true);
 })();
 </script>

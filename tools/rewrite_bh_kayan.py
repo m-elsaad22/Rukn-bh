@@ -708,7 +708,7 @@ def build_payload(title: str, slug: str) -> dict:
         for i, r in enumerate(price_rows)
     ]
 
-    excerpt = f"{full}: معاينة في {info['kind']} ثم عرض مكتوب. واتساب {WA} — بدون اتصال هاتفي."
+    excerpt = f"{full}: معاينة في {info['kind']} ثم عرض مكتوب. تواصل واتساب — بدون اتصال هاتفي."
     rm_title = f"{full} | ركن التطور البحرين"
     rm_desc = f"{full} بعد معاينة ميدانية. تشخيص مكتوب قبل التنفيذ. تواصل واتساب لحجز الموعد في {city}."
     if len(rm_desc) > 160:

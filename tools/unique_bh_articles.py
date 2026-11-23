@@ -215,7 +215,7 @@ def unique_excerpt(title: str) -> str:
         city = "البحرين"
     return (
         f"{title}: دليل محلي لـ{service} داخل {city} مع تشخيص قبل التنفيذ "
-        f"وعرض سعر مكتوب. واتساب {WA}."
+        f"وعرض سعر مكتوب. تواصل واتساب."
     )
 
 

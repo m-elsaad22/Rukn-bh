@@ -1047,7 +1047,7 @@ def build_article(title: str, slug: str) -> tuple[str, str]:
         wc = len(word_list(html))
         guard += 1
 
-    excerpt = f"{full}: {kw} بعد معاينة في {info['kind']}. واتساب {WA} — بدون اتصال هاتفي."
+    excerpt = f"{full}: {kw} بعد معاينة في {info['kind']}. تواصل واتساب — بدون اتصال هاتفي."
     return html, excerpt
 
 
